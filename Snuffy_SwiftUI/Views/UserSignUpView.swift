@@ -175,11 +175,7 @@ struct UserSignUpView: View {
                     .progressViewStyle(CircularProgressViewStyle(tint: snuffyPink))
             }
         }
-        .navigationBarBackButtonHidden(false)
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToHome) {
-            // Replace with your home view
-            Text("Home Screen")
-        }
+        .navigationBarBackButtonHidden(true)
         .alert("Error", isPresented: $viewModel.showAlert) {
             Button("OK", role: .cancel) { }
         } message: {
