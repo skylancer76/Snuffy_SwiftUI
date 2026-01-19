@@ -18,6 +18,7 @@ class HomeViewModel: ObservableObject {
     @Published var shouldNavigateToLogin = false
     @Published var shouldNavigateToCaretakerBooking = false
     @Published var shouldNavigateToDogWalkerBooking = false
+    @Published var shouldNavigateToMyPets = false
     @Published var selectedPet: PetData?
     
     private var homePetsListener: ListenerRegistration?
@@ -99,8 +100,7 @@ class HomeViewModel: ObservableObject {
     }
     
     func moveToMyPets() {
-        print("Navigate to My Pets tab")
-        // TODO: Implement tab switching to My Pets
+        shouldNavigateToMyPets = true
     }
     
     deinit {

@@ -10,25 +10,38 @@ import FirebaseAuth
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @Binding var selectedTab: Int
+    
     
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
         NavigationStack {
             ZStack {
-                // Gradient Background
+                // Background Gradient
                 LinearGradient(
-                    colors: [
-                        snuffyPink.opacity(0.3),
-                        Color.white
-                    ],
+                    colors: [snuffyPink.opacity(0.4), Color.white, Color.white],
                     startPoint: .top,
-                    endPoint: .center
+                    endPoint: .bottom
                 )
                 .ignoresSafeArea()
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
+                        // Custom Header
+                        HStack {
+                            Text("Explore")
+                                .font(.system(size: 42, weight: .bold))
+                            Spacer()
+                            Button(action: {
+                                viewModel.shouldNavigateToProfile = true
+                            }) {
+                                ProfileIconView(initials: viewModel.userInitials)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 20)
+                        
                         // Our Services Section
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Our Services")
@@ -40,7 +53,7 @@ struct HomeView: View {
                             ServiceCardView(
                                 title: "Pet Sitting",
                                 description: "Reliable caretaker to keep your pet happy and safe while you are away.",
-                                imageName: "petSitting",
+                                imageName: "Home1-2",
                                 backgroundColor: snuffyPink,
                                 iconName: "house.fill",
                                 action: {
@@ -53,7 +66,7 @@ struct HomeView: View {
                             ServiceCardView(
                                 title: "Pet Walking",
                                 description: "Experienced walkers to keep your pup active, healthy and happy!",
-                                imageName: "petWalking",
+                                imageName: "Home2-2",
                                 backgroundColor: Color.yellow,
                                 iconName: "pawprint.fill",
                                 action: {
@@ -72,7 +85,6 @@ struct HomeView: View {
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 16) {
-                                    // Display pets
                                     ForEach(viewModel.homePets) { pet in
                                         PetCardView(pet: pet)
                                             .onTapGesture {
@@ -81,7 +93,6 @@ struct HomeView: View {
                                             }
                                     }
                                     
-                                    // Add Pet Card
                                     AddPetCardView()
                                         .onTapGesture {
                                             viewModel.moveToMyPets()
@@ -91,34 +102,21 @@ struct HomeView: View {
                             }
                         }
                     }
-                    .padding(.top, 16)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 100) // Space for floating tab bar
                 }
             }
-            .navigationTitle("Explore")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        viewModel.shouldNavigateToProfile = true
-                    }) {
-                        ProfileIconView(initials: viewModel.userInitials)
-                    }
-                }
-            }
+            .navigationBarHidden(true)
             .onAppear {
                 viewModel.checkUserAuthentication()
                 viewModel.fetchUserNameAndSetupProfile()
                 viewModel.fetchPetsForHomeScreen()
             }
             .navigationDestination(isPresented: $viewModel.shouldNavigateToProfile) {
-                // Replace with your Profile View
                 Text("User Profile Screen")
             }
             .navigationDestination(isPresented: $viewModel.shouldNavigateToPetProfile) {
-                // Replace with your Pet Profile View
                 if let pet = viewModel.selectedPet {
-                    Text("Pet Profile: \(pet.petName ?? "Unknown")")
+                    PetProfileView(petId: pet.petId)
                 }
             }
             .navigationDestination(isPresented: $viewModel.shouldNavigateToCaretakerBooking) {
@@ -129,6 +127,12 @@ struct HomeView: View {
             }
             .fullScreenCover(isPresented: $viewModel.shouldNavigateToLogin) {
                 UserLoginView()
+            }
+            .onChange(of: viewModel.shouldNavigateToMyPets) { navigate in
+                if navigate {
+                    selectedTab = 2 // My Pets is now tab 2
+                    viewModel.shouldNavigateToMyPets = false
+                }
             }
         }
     }
@@ -152,26 +156,20 @@ struct ServiceCardView: View {
                 Image(imageName)
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 200)
+                    .frame(height: 180)
                     .clipped()
                     .cornerRadius(12, corners: [.topLeft, .topRight])
-                
-                Text(description)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.black)
-                    .padding(16)
-                    .lineLimit(2)
             }
             
             // Bottom Section with Title and Button
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: iconName)
-                        .font(.system(size: 20))
+                        .font(.system(size: 18))
                         .foregroundColor(snuffyPink)
                     
                     Text(title)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(snuffyPink)
                 }
                 
@@ -180,98 +178,29 @@ struct ServiceCardView: View {
                 Button(action: action) {
                     HStack(spacing: 6) {
                         Image(systemName: "calendar")
-                            .font(.system(size: 14))
+                            .font(.system(size: 12))
                         Text("Book Now")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
                     .background(snuffyPink)
-                    .cornerRadius(20)
+                    .cornerRadius(12)
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background(Color.white)
             .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
         }
         .background(Color.white)
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 5)
     }
 }
 
-// MARK: - Pet Card View
-struct PetCardView: View {
-    let pet: PetData
-    @State private var petImage: UIImage?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Pet Image
-            if let image = petImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 150, height: 160)
-                    .clipped()
-                    .cornerRadius(12)
-            } else {
-                Image("DogPlaceholder")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 150, height: 160)
-                    .clipped()
-                    .cornerRadius(12)
-                    .onAppear {
-                        loadPetImage()
-                    }
-            }
-            
-            // Pet Name
-            Text(pet.petName ?? "Unknown")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.black)
-                .padding(.horizontal, 8)
-        }
-        .frame(width: 150, height: 200)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 2, y: 2)
-    }
-    
-    private func loadPetImage() {
-        guard let imageUrlString = pet.petImage,
-              let url = URL(string: imageUrlString) else {
-            petImage = UIImage(named: "DogPlaceholder")
-            return
-        }
-        
-        let fileName = url.lastPathComponent
-        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let localURL = cachesDirectory.appendingPathComponent(fileName)
-        
-        // Check if the file exists locally
-        if FileManager.default.fileExists(atPath: localURL.path),
-           let image = UIImage(contentsOfFile: localURL.path) {
-            petImage = image
-        } else {
-            // Download the image using your existing ImageDownloader
-            ImageDownloader.shared.downloadImage(from: url) { downloadedLocalURL in
-                if let downloadedLocalURL = downloadedLocalURL,
-                   let image = UIImage(contentsOfFile: downloadedLocalURL.path) {
-                    DispatchQueue.main.async {
-                        petImage = image
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        petImage = UIImage(named: "DogPlaceholder")
-                    }
-                }
-            }
-        }
-    }
-}
+// PetCardView moved to its own file
 
 // MARK: - Add Pet Card View
 struct AddPetCardView: View {
@@ -328,5 +257,5 @@ struct RoundedCorner: Shape {
 }
 
 #Preview {
-    HomeView()
+    HomeView(selectedTab: .constant(0))
 }

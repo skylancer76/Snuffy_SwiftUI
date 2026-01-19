@@ -149,13 +149,9 @@ struct UserLoginView: View {
                     .progressViewStyle(CircularProgressViewStyle(tint: snuffyPink))
             }
         }
-        .navigationBarBackButtonHidden(false)
+        .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: $viewModel.shouldNavigateToSignUp) {
             UserSignUpView()
-        }
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToHome) {
-            // Replace with your home view
-            Text("Home Screen")
         }
         .navigationDestination(isPresented: $viewModel.shouldNavigateToCaretakerHome) {
             // Replace with your caretaker home view
