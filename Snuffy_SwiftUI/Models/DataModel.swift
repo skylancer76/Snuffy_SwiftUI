@@ -134,14 +134,14 @@ class DogWalker: Codable {
     }
 }
 
-enum BookingType {
+enum RequestType {
     case caretaker
     case dogWalker
 }
 
 struct UpcomingBookingModel {
     let bookingId: String
-    let bookingType: BookingType
+    let requestType: RequestType
     let caretakerOrWalkerId: String
     let caretakerOrWalkerName: String
     let caretakerOrWalkerPhone: String

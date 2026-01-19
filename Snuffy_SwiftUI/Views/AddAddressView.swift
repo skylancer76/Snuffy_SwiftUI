@@ -56,76 +56,27 @@ struct AddAddressView: View {
                             .foregroundColor(.gray)
                             .padding(.horizontal, 16)
                         
-                        ZStack {
-                            MapView(
-                                coordinate: $viewModel.selectedCoordinate,
-                                onTap: { coordinate in
-                                    viewModel.handleMapTap(coordinate: coordinate)
-                                }
-                            )
-                            .frame(height: 250)
+                        MapView(
+                            coordinate: $viewModel.selectedCoordinate,
+                            onTap: { coordinate in
+                                viewModel.handleMapTap(coordinate: coordinate)
+                            }
+                        )
+                        .frame(height: 250)
+                        .cornerRadius(12)
+                        .padding(.horizontal, 16)
+                        
+                        // Location TextField (read-only, shows reverse geocoded address)
+                        TextField("", text: $viewModel.locationSearchText)
+                            .padding()
+                            .background(Color.white)
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                             )
-                        }
-                        .padding(.horizontal, 16)
-                        
-                        // Location TextField with Autocomplete
-                        VStack(alignment: .leading, spacing: 0) {
-                            TextField("Search location", text: $viewModel.locationSearchText)
-                                .padding()
-                                .background(Color.white)
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                                .padding(.horizontal, 16)
-                                .onChange(of: viewModel.locationSearchText) { newValue in
-                                    viewModel.searchLocation(query: newValue)
-                                }
-                            
-                            // Autocomplete Results
-                            if !viewModel.searchResults.isEmpty {
-                                VStack(spacing: 0) {
-                                    ForEach(viewModel.searchResults, id: \.self) { result in
-                                        Button(action: {
-                                            viewModel.selectSearchResult(result)
-                                        }) {
-                                            HStack {
-                                                Image(systemName: "mappin.circle.fill")
-                                                    .foregroundColor(snuffyPink)
-                                                
-                                                VStack(alignment: .leading, spacing: 2) {
-                                                    Text(result.title)
-                                                        .font(.system(size: 14, weight: .medium))
-                                                        .foregroundColor(.black)
-                                                    
-                                                    Text(result.subtitle)
-                                                        .font(.system(size: 12))
-                                                        .foregroundColor(.gray)
-                                                }
-                                                
-                                                Spacer()
-                                            }
-                                            .padding(.vertical, 12)
-                                            .padding(.horizontal, 16)
-                                        }
-                                        
-                                        if result != viewModel.searchResults.last {
-                                            Divider()
-                                        }
-                                    }
-                                }
-                                .background(Color.white)
-                                .cornerRadius(12)
-                                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 8)
-                            }
-                        }
+                            .padding(.horizontal, 16)
+                            .disabled(true)
                     }
                     
                     // Address Details Section
@@ -190,7 +141,6 @@ struct AddAddressView: View {
         }
         .navigationTitle("Add Address")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
         .onAppear {
             viewModel.setDefaultLocation()
         }
@@ -203,5 +153,75 @@ struct AddAddressView: View {
         } message: {
             Text(viewModel.alertMessage)
         }
+    }
+}
+
+// MARK: - MapView UIViewRepresentable
+struct MapView: UIViewRepresentable {
+    @Binding var coordinate: CLLocationCoordinate2D
+    var onTap: (CLLocationCoordinate2D) -> Void
+    
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.delegate = context.coordinator
+        
+        let tapGesture = UITapGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.mapTapped(_:))
+        )
+        mapView.addGestureRecognizer(tapGesture)
+        
+        return mapView
+    }
+    
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        // Remove all existing annotations
+        mapView.removeAnnotations(mapView.annotations)
+        
+        // Add new annotation at selected coordinate
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        mapView.addAnnotation(annotation)
+        
+        // Center map on coordinate
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            latitudinalMeters: 1000,
+            longitudinalMeters: 1000
+        )
+        mapView.setRegion(region, animated: true)
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: MapView
+        
+        init(_ parent: MapView) {
+            self.parent = parent
+        }
+        
+        @objc func mapTapped(_ gesture: UITapGestureRecognizer) {
+            let mapView = gesture.view as! MKMapView
+            let location = gesture.location(in: mapView)
+            let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
+            parent.onTap(coordinate)
+        }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        AddAddressView(
+            requestType: .caretaker,
+            petName: "Buddy",
+            startDate: Date(),
+            endDate: Date(),
+            instructions: "Take good care",
+            isPetPickup: true,
+            isPetDropoff: true
+        )
     }
 }
