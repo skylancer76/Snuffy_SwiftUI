@@ -29,62 +29,38 @@ struct HomeView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Our Services Section (only visible when at top)
-                        if !viewModel.homePets.isEmpty {
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Our Services")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal, 16)
-                                
-                                // Pet Sitting Card
-                                ServiceCardView(
-                                    title: "Pet Sitting",
-                                    imageName: "Frame 1",
-                                    backgroundColor: snuffyPink,
-                                    iconName: "house.fill",
-                                    action: {
-                                        viewModel.navigateToPetSitting()
-                                    }
-                                )
+                        // Our Services Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Our Services")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.black)
                                 .padding(.horizontal, 16)
-                                
-                                // Pet Walking Card
-                                ServiceCardView(
-                                    title: "Pet Walking",
-                                    imageName: "Frame 2",
-                                    backgroundColor: Color.yellow,
-                                    iconName: "pawprint.fill",
-                                    action: {
-                                        viewModel.navigateToPetWalking()
-                                    }
-                                )
-                                .padding(.horizontal, 16)
-                            }
-                        } else {
-                            // Show only collapsed service cards when scrolled or no pets
-                            VStack(spacing: 16) {
-                                // Pet Sitting Card (Collapsed)
-                                ServiceCardCollapsedView(
-                                    title: "Pet Sitting",
-                                    iconName: "house.fill",
-                                    action: {
-                                        viewModel.navigateToPetSitting()
-                                    }
-                                )
-                                .padding(.horizontal, 16)
-                                
-                                // Pet Walking Card (Collapsed)
-                                ServiceCardCollapsedView(
-                                    title: "Pet Walking",
-                                    iconName: "pawprint.fill",
-                                    action: {
-                                        viewModel.navigateToPetWalking()
-                                    }
-                                )
-                                .padding(.horizontal, 16)
-                            }
-                            .padding(.top, 8)
+                            
+                            // Pet Sitting Card
+                            ServiceCardView(
+                                title: "Pet Sitting",
+                                description: "Reliable caretaker to keep your pet happy and safe while you are away.",
+                                imageName: "petSitting",
+                                backgroundColor: snuffyPink,
+                                iconName: "house.fill",
+                                action: {
+                                    viewModel.navigateToPetSitting()
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                            
+                            // Pet Walking Card
+                            ServiceCardView(
+                                title: "Pet Walking",
+                                description: "Experienced walkers to keep your pup active, healthy and happy!",
+                                imageName: "petWalking",
+                                backgroundColor: Color.yellow,
+                                iconName: "pawprint.fill",
+                                action: {
+                                    viewModel.navigateToPetWalking()
+                                }
+                            )
+                            .padding(.horizontal, 16)
                         }
                         
                         // My Pets Section
@@ -145,6 +121,12 @@ struct HomeView: View {
                     Text("Pet Profile: \(pet.petName ?? "Unknown")")
                 }
             }
+            .navigationDestination(isPresented: $viewModel.shouldNavigateToCaretakerBooking) {
+                BookCaretakerView()
+            }
+            .navigationDestination(isPresented: $viewModel.shouldNavigateToDogWalkerBooking) {
+                BookDogWalkerView()
+            }
             .fullScreenCover(isPresented: $viewModel.shouldNavigateToLogin) {
                 UserLoginView()
             }
@@ -152,9 +134,10 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Service Card View (Full)
+// MARK: - Service Card View
 struct ServiceCardView: View {
     let title: String
+    let description: String
     let imageName: String
     let backgroundColor: Color
     let iconName: String
@@ -172,6 +155,12 @@ struct ServiceCardView: View {
                     .frame(height: 200)
                     .clipped()
                     .cornerRadius(12, corners: [.topLeft, .topRight])
+                
+                Text(description)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.black)
+                    .padding(16)
+                    .lineLimit(2)
             }
             
             // Bottom Section with Title and Button
@@ -206,49 +195,6 @@ struct ServiceCardView: View {
             .background(Color.white)
             .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
         }
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-    }
-}
-
-// MARK: - Service Card View (Collapsed - when scrolled)
-struct ServiceCardCollapsedView: View {
-    let title: String
-    let iconName: String
-    let action: () -> Void
-    
-    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
-    
-    var body: some View {
-        HStack {
-            HStack(spacing: 8) {
-                Image(systemName: iconName)
-                    .font(.system(size: 20))
-                    .foregroundColor(snuffyPink)
-                
-                Text(title)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(snuffyPink)
-            }
-            
-            Spacer()
-            
-            Button(action: action) {
-                HStack(spacing: 6) {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 14))
-                    Text("Book Now")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(snuffyPink)
-                .cornerRadius(20)
-            }
-        }
-        .padding(16)
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)

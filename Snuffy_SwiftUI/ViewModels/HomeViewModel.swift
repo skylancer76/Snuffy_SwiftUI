@@ -16,6 +16,8 @@ class HomeViewModel: ObservableObject {
     @Published var shouldNavigateToProfile = false
     @Published var shouldNavigateToPetProfile = false
     @Published var shouldNavigateToLogin = false
+    @Published var shouldNavigateToCaretakerBooking = false
+    @Published var shouldNavigateToDogWalkerBooking = false
     @Published var selectedPet: PetData?
     
     private var homePetsListener: ListenerRegistration?
@@ -89,19 +91,16 @@ class HomeViewModel: ObservableObject {
     
     // MARK: - Navigation Actions
     func navigateToPetSitting() {
-        print("Navigate to Pet Sitting booking")
-        // TODO: Implement navigation to pet sitting booking
+        shouldNavigateToCaretakerBooking = true
     }
     
     func navigateToPetWalking() {
-        print("Navigate to Pet Walking booking")
-        // TODO: Implement navigation to pet walking booking
+        shouldNavigateToDogWalkerBooking = true
     }
     
     func moveToMyPets() {
         print("Navigate to My Pets tab")
         // TODO: Implement tab switching to My Pets
-        // This should be handled by the parent TabView
     }
     
     deinit {
