@@ -13,11 +13,14 @@ import FirebaseFirestore
 class HomeViewModel: ObservableObject {
     @Published var homePets: [PetData] = []
     @Published var userInitials: String = "U"
+    @Published var userName: String = ""
+    @Published var userEmail: String = ""
     @Published var shouldNavigateToProfile = false
     @Published var shouldNavigateToPetProfile = false
     @Published var shouldNavigateToLogin = false
     @Published var shouldNavigateToCaretakerBooking = false
     @Published var shouldNavigateToDogWalkerBooking = false
+    @Published var shouldNavigateToMyPets = false
     @Published var selectedPet: PetData?
     
     private var homePetsListener: ListenerRegistration?
@@ -40,14 +43,19 @@ class HomeViewModel: ObservableObject {
             if let document = document,
                document.exists,
                let data = document.data(),
-               let name = data["name"] as? String {
+               let name = data["name"] as? String,
+               let email = data["email"] as? String {
                 DispatchQueue.main.async {
+                    self.userName = name
+                    self.userEmail = email
                     self.userInitials = self.getInitials(from: name)
                 }
             } else {
-                print("User document not found: \(error?.localizedDescription ?? "Unknown error")")
+                print("User document not found or missing fields: \(error?.localizedDescription ?? "Unknown error")")
                 DispatchQueue.main.async {
                     self.userInitials = "U"
+                    self.userName = "Unknown User"
+                    self.userEmail = Auth.auth().currentUser?.email ?? ""
                 }
             }
         }
@@ -99,8 +107,16 @@ class HomeViewModel: ObservableObject {
     }
     
     func moveToMyPets() {
-        print("Navigate to My Pets tab")
-        // TODO: Implement tab switching to My Pets
+        shouldNavigateToMyPets = true
+    }
+    
+    func logout() {
+        do {
+            try Auth.auth().signOut()
+            shouldNavigateToLogin = true
+        } catch {
+            print("Error signing out: \(error.localizedDescription)")
+        }
     }
     
     deinit {

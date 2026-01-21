@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 class GetStartedViewModel: ObservableObject {
     @Published var shouldNavigate = false
     
