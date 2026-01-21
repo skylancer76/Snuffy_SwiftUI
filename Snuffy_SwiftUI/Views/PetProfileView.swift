@@ -23,7 +23,7 @@ struct PetProfileView: View {
         ZStack {
             // Background
             LinearGradient(
-                colors: [snuffyPink.opacity(0.1), Color.white, Color.white],
+                colors: [snuffyPink.opacity(0.3), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -37,24 +37,38 @@ struct PetProfileView: View {
                         // Pet Image Section
                         VStack(spacing: 20) {
                             PetProfileImageView(imageUrl: pet.petImage)
-                            
-                            Text(pet.petName ?? "Unknown")
-                                .font(.system(size: 36, weight: .bold))
-                                .foregroundColor(snuffyPink)
                         }
                         .padding(.top, 40)
                         
+                        VStack(spacing: 8) {
+                            Text(pet.petName ?? "Unknown")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.black)
+                            
+                            Text(pet.petBreed ?? "Unknown")
+                                .font(.system(size: 18))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.top, 10)
+                        
                         // Pet Info Container
                         HStack(spacing: 0) {
-                            InfoItem(title: "Breed", value: pet.petBreed ?? "Unknown")
-                            InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
                             InfoItem(title: "Weight", value: pet.petWeight ?? "Unknown")
+                            InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
                             InfoItem(title: "Gender", value: pet.petGender ?? "Unknown")
                         }
-                        .padding(.vertical, 20)
-                        .background(snuffyPink.opacity(0.08))
-                        .cornerRadius(16)
+                        .padding(.vertical, 16)
+                        .background(snuffyPink.opacity(0.15))
+                        .cornerRadius(12)
                         .padding(.horizontal, 16)
+                        
+                        VStack(alignment: .leading) {
+                            Text("Pet Details")
+                                .font(.system(size: 24, weight: .bold))
+                                .padding(.horizontal, 16)
+                                .padding(.top, 8)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         
                         // Options List
                         VStack(spacing: 0) {
@@ -117,7 +131,7 @@ struct PetProfileView: View {
 struct PetProfileImageView: View {
     let imageUrl: String?
     @State private var uiImage: UIImage?
-    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    private let snuffyPink = Color(uiColor: .systemPink)
     
     var body: some View {
         ZStack {
@@ -131,10 +145,8 @@ struct PetProfileImageView: View {
                     .scaledToFill()
             }
         }
-        .frame(width: 140, height: 140)
+        .frame(width: 180, height: 180)
         .clipShape(Circle())
-        .overlay(Circle().stroke(snuffyPink, lineWidth: 6))
-        .shadow(color: snuffyPink.opacity(0.3), radius: 15, x: 0, y: 10)
         .onAppear {
             loadPetImage()
         }
@@ -168,12 +180,12 @@ struct InfoItem: View {
     
     var body: some View {
         VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.black)
             Text(title)
                 .font(.caption)
                 .foregroundColor(.gray)
-            Text(value)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity)
     }
@@ -182,7 +194,7 @@ struct InfoItem: View {
 struct ProfileOptionRow: View {
     let title: String
     let icon: String
-    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    private let snuffyPink = Color(uiColor: .systemPink)
     
     var body: some View {
         HStack(spacing: 16) {
@@ -199,10 +211,6 @@ struct ProfileOptionRow: View {
                 .foregroundColor(.black)
             
             Spacer()
-            
-            Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
-                .font(.system(size: 14, weight: .semibold))
         }
         .padding(16)
         .contentShape(Rectangle())

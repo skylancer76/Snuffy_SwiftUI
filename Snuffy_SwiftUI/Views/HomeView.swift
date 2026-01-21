@@ -11,6 +11,7 @@ import FirebaseAuth
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @Binding var selectedTab: Int
+    @Environment(\.dismiss) private var dismiss
     
     
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
@@ -112,7 +113,12 @@ struct HomeView: View {
                 viewModel.fetchPetsForHomeScreen()
             }
             .navigationDestination(isPresented: $viewModel.shouldNavigateToProfile) {
-                Text("User Profile Screen")
+                UserProfileView(viewModel: viewModel)
+            }
+            .onChange(of: viewModel.shouldNavigateToLogin) { newValue in
+                if newValue {
+                    dismiss()
+                }
             }
             .navigationDestination(isPresented: $viewModel.shouldNavigateToPetProfile) {
                 if let pet = viewModel.selectedPet {
