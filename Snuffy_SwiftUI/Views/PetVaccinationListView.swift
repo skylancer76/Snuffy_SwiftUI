@@ -20,7 +20,7 @@ struct PetVaccinationListView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [snuffyPink.opacity(0.1), Color.white, Color.white],
+                colors: [snuffyPink.opacity(0.3), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -60,7 +60,10 @@ struct PetVaccinationListView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         ForEach(viewModel.vaccinations, id: \.vaccineId) { vaccination in
-                            VaccinationRow(vaccination: vaccination)
+                            NavigationLink(destination: VaccinationDetailView(vaccination: vaccination)) {
+                                VaccinationRow(vaccination: vaccination)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                     .padding(16)
@@ -110,7 +113,7 @@ struct VaccinationRow: View {
                 if vaccination.expires, let expiry = vaccination.expiryDate {
                     Text("Expires on \(expiry)")
                         .font(.caption)
-                        .foregroundColor(.red.opacity(0.8))
+                        .foregroundColor(.gray)
                 }
             }
             

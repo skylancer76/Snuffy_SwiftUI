@@ -20,7 +20,7 @@ struct PetMedicationListView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [snuffyPink.opacity(0.1), Color.white, Color.white],
+                colors: [snuffyPink.opacity(0.3), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -60,7 +60,10 @@ struct PetMedicationListView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         ForEach(viewModel.medications, id: \.medicationId) { medication in
-                            MedicationRow(medication: medication)
+                            NavigationLink(destination: MedicationDetailView(medication: medication)) {
+                                MedicationRow(medication: medication)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                     .padding(16)
