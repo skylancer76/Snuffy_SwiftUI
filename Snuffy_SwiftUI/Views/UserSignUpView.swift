@@ -18,7 +18,7 @@ struct UserSignUpView: View {
             // Gradient Background
             LinearGradient(
                 colors: [
-                    snuffyPink.opacity(0.5),
+                    snuffyPink.opacity(0.4),
                     Color.white
                 ],
                 startPoint: .top,
@@ -125,7 +125,7 @@ struct UserSignUpView: View {
                                 .font(.system(size: 24))
                                 .foregroundColor(snuffyPink)
                             
-                            Text("Agree with terms and conditions")
+                            Text("Agree with Terms & Conditions")
                                 .font(.system(size: 16))
                                 .foregroundColor(.black)
                             
