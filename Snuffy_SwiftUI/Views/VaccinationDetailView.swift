@@ -15,9 +15,9 @@ struct VaccinationDetailView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [snuffyPink.opacity(0.3), Color.clear],
+                colors: [snuffyPink.opacity(0.2), Color.clear],
                 startPoint: .top,
-                endPoint: .bottom
+                endPoint: .center
             )
             .ignoresSafeArea()
             

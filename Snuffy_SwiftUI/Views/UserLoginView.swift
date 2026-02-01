@@ -18,7 +18,7 @@ struct UserLoginView: View {
             // Gradient Background
             LinearGradient(
                 colors: [
-                    snuffyPink.opacity(0.5),
+                    snuffyPink.opacity(0.4),
                     Color.white
                 ],
                 startPoint: .top,
@@ -177,9 +177,9 @@ struct SnuffyTextFieldStyle: TextFieldStyle {
             .background(Color.white)
             .cornerRadius(8)
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 30)
                     .stroke(
-                        showError ? Color.red : (isValid ? snuffyPink : Color.gray.opacity(0.3)),
+                        showError ? Color.red : (isValid ? snuffyPink : Color.gray.opacity(0.5)),
                         lineWidth: showError || isValid ? 2 : 1
                     )
             )
