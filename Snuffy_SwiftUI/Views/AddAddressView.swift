@@ -50,37 +50,78 @@ struct AddAddressView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // Map Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Select your location")
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Select Your Location")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                         
-                        MapView(
-                            coordinate: $viewModel.selectedCoordinate,
-                            onTap: { coordinate in
-                                viewModel.handleMapTap(coordinate: coordinate)
-                            }
-                        )
-                        .frame(height: 250)
-                        .cornerRadius(12)
-                        .padding(.horizontal, 16)
-                        
-                        // Location TextField (read-only, shows reverse geocoded address)
-                        TextField("", text: $viewModel.locationSearchText)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(12)
+                        VStack(alignment: .leading) {
+                            MapView(
+                                coordinate: $viewModel.selectedCoordinate,
+                                onTap: { coordinate in
+                                    viewModel.handleMapTap(coordinate: coordinate)
+                                }
+                            )
+                            .frame(height: 250)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                             )
+                            .cornerRadius(12)
                             .padding(.horizontal, 16)
-                            .disabled(true)
+                            
+                            // Location TextField
+                            TextField("Search address...", text: $viewModel.locationSearchText)
+                                .padding()
+                                .background(Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                                .cornerRadius(12)
+                                .padding(.horizontal, 16)
+                                .padding(.top, -1) // overlap borders to remove double thickness
+                            
+                            // Autocomplete Results Dropdown
+                            if !viewModel.searchResults.isEmpty {
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        ForEach(viewModel.searchResults, id: \.self) { result in
+                                            Button(action: {
+                                                viewModel.selectSearchResult(result)
+                                                // hide keyboard
+                                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                            }) {
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(result.title)
+                                                        .font(.system(size: 16, weight: .semibold))
+                                                        .foregroundColor(.black)
+                                                    Text(result.subtitle)
+                                                        .font(.system(size: 14))
+                                                        .foregroundColor(.gray)
+                                                }
+                                                .padding(.vertical, 10)
+                                                .padding(.horizontal, 16)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .background(Color.white)
+                                            }
+                                            Divider()
+                                        }
+                                    }
+                                }
+                                .frame(maxHeight: 200)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 5)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 4)
+                            }
+                        }
                     }
                     
                     // Address Details Section
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         TextField("House No.& Floor *", text: $viewModel.houseNo)
                             .padding()
                             .background(Color.white)
@@ -120,9 +161,9 @@ struct AddAddressView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 56)
+                            .frame(height: 52)
                             .background(snuffyPink)
-                            .cornerRadius(12)
+                            .cornerRadius(30)
                     }
                     .padding(.horizontal, 16)
                     .disabled(viewModel.isLoading)
@@ -141,6 +182,22 @@ struct AddAddressView: View {
         }
         .navigationTitle("Add Address")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
         .onAppear {
             viewModel.setDefaultLocation()
         }
