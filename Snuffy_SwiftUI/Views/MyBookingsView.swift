@@ -15,6 +15,9 @@ struct MyBookingsView: View {
     @State private var showingCaretakerBooking = false
     @State private var showingDogWalkerBooking = false
     
+    @State private var selectedCaretakerBooking: BookingItem?
+    @State private var selectedDogWalkerBooking: BookingItem?
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -65,7 +68,11 @@ struct MyBookingsView: View {
                                             }
                                         },
                                         onViewDetails: {
-                                            print("View details tapped for booking: \(booking.id)")
+                                            if booking.type == .caretaker {
+                                                selectedCaretakerBooking = booking
+                                            } else {
+                                                selectedDogWalkerBooking = booking
+                                            }
                                         }
                                     )
                                 }
@@ -77,6 +84,36 @@ struct MyBookingsView: View {
                 }
             }
             .navigationBarHidden(true)
+            .background(
+                NavigationLink(
+                    destination: Group {
+                        if let booking = selectedCaretakerBooking {
+                            CaretakerBookingsInfoView(booking: booking)
+                        } else {
+                            EmptyView()
+                        }
+                    },
+                    isActive: Binding(
+                        get: { selectedCaretakerBooking != nil },
+                        set: { if !$0 { selectedCaretakerBooking = nil } }
+                    )
+                ) { EmptyView() }
+            )
+            .background(
+                NavigationLink(
+                    destination: Group {
+                        if let booking = selectedDogWalkerBooking {
+                            DogWalkerBookingsInfoView(booking: booking)
+                        } else {
+                            EmptyView()
+                        }
+                    },
+                    isActive: Binding(
+                        get: { selectedDogWalkerBooking != nil },
+                        set: { if !$0 { selectedDogWalkerBooking = nil } }
+                    )
+                ) { EmptyView() }
+            )
             .sheet(isPresented: $showingCaretakerBooking) {
                 BookCaretakerView()
             }
