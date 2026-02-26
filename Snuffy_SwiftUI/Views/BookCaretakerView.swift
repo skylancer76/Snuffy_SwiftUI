@@ -16,18 +16,19 @@ struct BookCaretakerView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
-        ZStack {
+        NavigationStack {
+            ZStack {
             Color(UIColor.systemGray6)
                 .ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 24) {
                     // Booking Details Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Booking Details")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                         
                         VStack(spacing: 0) {
                             // Pet Selection
@@ -128,20 +129,20 @@ struct BookCaretakerView: View {
                             .background(Color.white)
                         }
                         .cornerRadius(12)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 20)
                         
                         Text("Additional charges apply for pet pickup and drop off services.")
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                     }
                     
                     // Caretaking Instructions Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Caretaking Instructions")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                         
                         TextEditor(text: $viewModel.caretakingInstructions)
                             .frame(height: 150)
@@ -152,7 +153,7 @@ struct BookCaretakerView: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                             )
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                     }
                     
                     // Add Address Button
@@ -163,11 +164,11 @@ struct BookCaretakerView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 56)
+                            .frame(height: 52)
                             .background(snuffyPink)
-                            .cornerRadius(12)
+                            .cornerRadius(30)
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
                     .disabled(viewModel.isLoading || viewModel.selectedPetName.isEmpty)
                 }
                 .padding(.vertical, 24)
@@ -182,13 +183,21 @@ struct BookCaretakerView: View {
                     .progressViewStyle(CircularProgressViewStyle(tint: snuffyPink))
             }
         }
-        .navigationTitle("Book Caretaker")
+        .navigationTitle("Caretaker Booking")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
+                Button(action: {
                     dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white)
+                        .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {
@@ -217,6 +226,7 @@ struct BookCaretakerView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("You currently have no pets. Please add a pet to continue.")
+        }
         }
     }
 }

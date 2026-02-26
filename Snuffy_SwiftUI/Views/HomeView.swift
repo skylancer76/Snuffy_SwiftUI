@@ -26,7 +26,7 @@ struct HomeView: View {
                         Color.white
                     ],
                     startPoint: .top,
-                    endPoint: .center
+                    endPoint: .bottom
                 )
                 .ignoresSafeArea()
 
@@ -97,7 +97,7 @@ struct HomeView: View {
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.black)
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
+                                .padding(.bottom, 25)
 
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 16) {
@@ -145,10 +145,10 @@ struct HomeView: View {
                     PetProfileView(petId: pet.petId)
                 }
             }
-            .navigationDestination(isPresented: $viewModel.shouldNavigateToCaretakerBooking) {
+            .sheet(isPresented: $viewModel.shouldNavigateToCaretakerBooking) {
                 BookCaretakerView()
             }
-            .navigationDestination(isPresented: $viewModel.shouldNavigateToDogWalkerBooking) {
+            .sheet(isPresented: $viewModel.shouldNavigateToDogWalkerBooking) {
                 BookDogWalkerView()
             }
             .fullScreenCover(isPresented: $viewModel.shouldNavigateToLogin) {
@@ -207,7 +207,7 @@ struct PetCircleCardView: View {
     let fillColor: Color
 
     private let outerSize: CGFloat = 100
-    private let innerSize: CGFloat = 78
+    private let innerSize: CGFloat = 88
     private let borderWidth: CGFloat = 3
 
     var body: some View {
@@ -215,7 +215,7 @@ struct PetCircleCardView: View {
             ZStack {
                 // Outer circle – pink border
                 Circle()
-                    .stroke(borderColor, lineWidth: borderWidth)
+                    .strokeBorder(borderColor, lineWidth: borderWidth)
                     .frame(width: outerSize, height: outerSize)
 
                 // Fill behind the image
@@ -226,9 +226,28 @@ struct PetCircleCardView: View {
                 // Pet image (clipped to inner circle)
                 Group {
                     if let imageName = pet.petImage, !imageName.isEmpty {
-                        Image(imageName)
-                            .resizable()
-                            .scaledToFill()
+                        if let url = URL(string: imageName), imageName.hasPrefix("http") {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    ProgressView()
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .failure:
+                                    Image(systemName: "dog.fill")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(borderColor)
+                                @unknown default:
+                                    EmptyView()
+                                }
+                            }
+                        } else {
+                            Image(imageName)
+                                .resizable()
+                                .scaledToFill()
+                        }
                     } else {
                         Image(systemName: "dog.fill")
                             .font(.system(size: 32))
@@ -261,7 +280,7 @@ struct AddPetCircleView: View {
             ZStack {
                 // Outer circle – pink border
                 Circle()
-                    .stroke(borderColor, lineWidth: borderWidth)
+                    .strokeBorder(borderColor, lineWidth: borderWidth)
                     .frame(width: outerSize, height: outerSize)
 
                 // Inner fill

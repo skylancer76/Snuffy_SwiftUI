@@ -16,7 +16,8 @@ struct BookDogWalkerView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
-        ZStack {
+        NavigationStack {
+            ZStack {
             Color(UIColor.systemGray6)
                 .ignoresSafeArea()
             
@@ -27,7 +28,7 @@ struct BookDogWalkerView: View {
                         Text("Booking Details")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                         
                         VStack(spacing: 0) {
                             // Pet Selection
@@ -68,6 +69,8 @@ struct BookDogWalkerView: View {
                                 .datePickerStyle(.compact)
                                 .padding()
                                 .background(Color.white)
+                                .foregroundColor(.gray)
+                                .font(.system(size: 16))
                             
                             Divider().padding(.leading, 16)
                             
@@ -76,6 +79,8 @@ struct BookDogWalkerView: View {
                                 .datePickerStyle(.compact)
                                 .padding()
                                 .background(Color.white)
+                                .foregroundColor(.gray)
+                                .font(.system(size: 16))
                             
                             Divider().padding(.leading, 16)
                             
@@ -84,11 +89,13 @@ struct BookDogWalkerView: View {
                                 .datePickerStyle(.compact)
                                 .padding()
                                 .background(Color.white)
+                                .foregroundColor(.gray)
+                                .font(.system(size: 16))
                         }
                         .cornerRadius(12)
                         .padding(.horizontal, 16)
                         
-                        Text("Pickup and Drop charges are included.")
+                        Text("No additional charges apply for pet pickup and drop off services.")
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
                             .padding(.horizontal, 16)
@@ -99,7 +106,7 @@ struct BookDogWalkerView: View {
                         Text("Walking Instructions")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 20)
                         
                         TextEditor(text: $viewModel.walkingInstructions)
                             .frame(height: 150)
@@ -121,9 +128,9 @@ struct BookDogWalkerView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 56)
+                            .frame(height: 52)
                             .background(snuffyPink)
-                            .cornerRadius(12)
+                            .cornerRadius(30)
                     }
                     .padding(.horizontal, 16)
                     .disabled(viewModel.isLoading || viewModel.selectedPetName.isEmpty)
@@ -140,13 +147,21 @@ struct BookDogWalkerView: View {
                     .progressViewStyle(CircularProgressViewStyle(tint: snuffyPink))
             }
         }
-        .navigationTitle("Book Dog Walker")
+        .navigationTitle("Pet Walker Booking")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
+                Button(action: {
                     dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white)
+                        .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {
@@ -176,6 +191,7 @@ struct BookDogWalkerView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("You currently have no pets. Please add a pet to continue.")
+        }
         }
     }
 }

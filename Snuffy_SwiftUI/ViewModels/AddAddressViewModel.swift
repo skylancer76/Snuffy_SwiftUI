@@ -12,7 +12,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import CoreLocation
 
-class AddAddressViewModel: ObservableObject {
+class AddAddressViewModel: NSObject, ObservableObject {
     // MARK: - Published Properties
     @Published var selectedCoordinate = CLLocationCoordinate2D(latitude: 13.0827, longitude: 80.2707)
     @Published var locationSearchText = ""
@@ -60,12 +60,65 @@ class AddAddressViewModel: ObservableObject {
         self.currentRequestId = currentRequestId
     }
     
+    // MARK: - Autocomplete Properties
+    private var searchCompleter = MKLocalSearchCompleter()
+    @Published var searchResults: [MKLocalSearchCompletion] = []
+    private var cancellables = Set<AnyCancellable>()
+    
     // MARK: - Set Default Location (Chennai)
     func setDefaultLocation() {
         // Default to Chennai coordinates (matches UIKit)
         let chennaiCoordinate = CLLocationCoordinate2D(latitude: 13.0827, longitude: 80.2707)
         selectedCoordinate = chennaiCoordinate
         getAddressFromCoordinates(coordinate: chennaiCoordinate)
+        
+        setupSearchCompleter()
+    }
+    
+    // MARK: - Search Completer Setup
+    private func setupSearchCompleter() {
+        searchCompleter.delegate = self
+        searchCompleter.resultTypes = .address
+        
+        // Listen to text changes for autocomplete
+        $locationSearchText
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+            .removeDuplicates()
+            .sink { [weak self] query in
+                guard let self = self else { return }
+                if query.isEmpty {
+                    self.searchResults = []
+                } else if query != self.lastGeocodedAddress {
+                    self.searchCompleter.queryFragment = query
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private var lastGeocodedAddress: String = ""
+    
+    // MARK: - Handle Autocomplete Selection
+    func selectSearchResult(_ result: MKLocalSearchCompletion) {
+        let searchQuery = result.title + " " + result.subtitle
+        let searchRequest = MKLocalSearch.Request()
+        searchRequest.naturalLanguageQuery = searchQuery
+        
+        let search = MKLocalSearch(request: searchRequest)
+        search.start { [weak self] response, error in
+            guard let self = self,
+                  let coordinate = response?.mapItems.first?.placemark.coordinate,
+                  error == nil else {
+                print("Error in local search: \(error?.localizedDescription ?? "Unknown")")
+                return
+            }
+            
+            DispatchQueue.main.async {
+                self.selectedCoordinate = coordinate
+                self.lastGeocodedAddress = searchQuery
+                self.locationSearchText = searchQuery
+                self.searchResults = []
+            }
+        }
     }
     
     // MARK: - Handle Map Tap
@@ -98,7 +151,9 @@ class AddAddressViewModel: ObservableObject {
             ].compactMap { $0 }.joined(separator: ", ")
             
             DispatchQueue.main.async {
+                self.lastGeocodedAddress = addressString
                 self.locationSearchText = addressString
+                self.searchResults = []
             }
         }
     }
@@ -340,5 +395,16 @@ class AddAddressViewModel: ObservableObject {
                 completion("Anonymous User")
             }
         }
+    }
+}
+
+// MARK: - MKLocalSearchCompleterDelegate
+extension AddAddressViewModel: MKLocalSearchCompleterDelegate {
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        self.searchResults = completer.results
+    }
+    
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        print("Search completer error: \(error.localizedDescription)")
     }
 }
