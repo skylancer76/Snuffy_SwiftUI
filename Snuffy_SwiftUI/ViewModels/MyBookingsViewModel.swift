@@ -35,6 +35,7 @@ enum DynamicBookingStatus: String {
 
 struct BookingItem: Identifiable {
     let id: String
+    let petId: String?
     let petName: String
     let petImageUrl: String?
     let startDate: Date
@@ -130,8 +131,9 @@ class MyBookingsViewModel: ObservableObject {
                     self.fetchPetImage(for: request.petName) { imageUrl in
                         let item = BookingItem(
                             id: request.requestId,
+                            petId: request.petId,
                             petName: request.petName,
-                            petImageUrl: imageUrl ?? request.petImageUrl, // fallback to whatever is on the request
+                            petImageUrl: imageUrl ?? request.petImageUrl, 
                             startDate: request.startDate ?? Date(),
                             endDate: request.endDate ?? Date(),
                             status: request.status,
@@ -183,6 +185,7 @@ class MyBookingsViewModel: ObservableObject {
                     self.fetchPetImage(for: request.petName) { imageUrl in
                         let item = BookingItem(
                             id: request.requestId,
+                            petId: request.petId,
                             petName: request.petName,
                             petImageUrl: imageUrl ?? request.petImageUrl,
                             startDate: request.startTime,

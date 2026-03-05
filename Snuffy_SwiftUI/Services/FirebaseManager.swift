@@ -29,7 +29,7 @@ class FirebaseManager {
             }
         }
     }
-    
+
     // MARK: - Caretaker Data Functions
     
     func saveCaretakerData(caretakers: [Caretakers], completion: @escaping (Error?) -> Void) {
@@ -1034,4 +1034,30 @@ class FirebaseManager {
             }
         }
     }
+
+    func getDownloadURL(from path: String, completion: @escaping (URL?, Error?) -> Void) {
+        // If it's already a full URL, return it
+        if path.starts(with: "http") {
+            completion(URL(string: path), nil)
+            return
+        }
+        
+        // Otherwise, resolve the storage path
+        let storageRef = Storage.storage().reference().child(path)
+        storageRef.downloadURL { url, error in
+            completion(url, error)
+        }
+    }
+
+    /// MARK: - Update Firestore Distance (Synced from snuffy-main)
+    func updateDistanceInFirestore(collection: String, id: String, distance: Double) {
+        db.collection(collection).document(id).updateData(["distanceAway": distance]) { error in
+            if let error = error {
+                print("Error updating distance in \(collection): \(error.localizedDescription)")
+            } else {
+                print("Distance updated successfully in \(collection)")
+            }
+        }
+    }
 }
+

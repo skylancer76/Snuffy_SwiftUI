@@ -21,54 +21,47 @@ struct PetProfileView: View {
     
     var body: some View {
         ZStack {
-            // Background
+            // Background Gradient
             LinearGradient(
                 colors: [snuffyPink.opacity(0.3), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
+            .frame(height: 400)
+            .frame(maxHeight: .infinity, alignment: .top)
             .ignoresSafeArea()
             
             if viewModel.isLoading {
                 ProgressView()
             } else if let pet = viewModel.pet {
                 ScrollView {
-                    VStack(spacing: 32) {
+                    VStack(spacing: 24) {
                         // Pet Image Section
-                        VStack(spacing: 20) {
+                        VStack(spacing: 16) {
                             PetProfileImageView(imageUrl: pet.petImage)
-                        }
-                        .padding(.top, 40)
-                        
-                        VStack(spacing: 8) {
-                            Text(pet.petName ?? "Unknown")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.black)
                             
-                            Text(pet.petBreed ?? "Unknown")
-                                .font(.system(size: 18))
-                                .foregroundColor(.gray)
+                            VStack(spacing: 4) {
+                                Text(pet.petName ?? "Unknown")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.black)
+                                
+                                Text(pet.petBreed ?? "Unknown")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.gray)
+                            }
                         }
-                        .padding(.top, 10)
+                        .padding(.top, 20)
                         
-                        // Pet Info Container
+                        // Pet Info Container (Pink Tinted Box)
                         HStack(spacing: 0) {
                             InfoItem(title: "Weight", value: pet.petWeight ?? "Unknown")
-                            InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
                             InfoItem(title: "Gender", value: pet.petGender ?? "Unknown")
+                            InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
                         }
                         .padding(.vertical, 16)
-                        .background(snuffyPink.opacity(0.15))
+                        .background(snuffyPink.opacity(0.1))
                         .cornerRadius(12)
                         .padding(.horizontal, 16)
-                        
-                        VStack(alignment: .leading) {
-                            Text("Pet Details")
-                                .font(.system(size: 24, weight: .bold))
-                                .padding(.horizontal, 16)
-                                .padding(.top, 8)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         
                         // Options List
                         VStack(spacing: 0) {
@@ -88,7 +81,7 @@ struct PetProfileView: View {
                         }
                         .background(Color.white)
                         .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.05), radius: 15, x: 0, y: 5)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                         .padding(.horizontal, 16)
                     }
                     .padding(.bottom, 40)

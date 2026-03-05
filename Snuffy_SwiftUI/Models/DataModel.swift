@@ -88,6 +88,8 @@ class DogWalker: Codable {
     var password: String
     var profilePic: String?
     var rating: String?
+    var bio: String?
+    var galleryImages: [String]?
     var address: String
     var location: [Double]
     var distanceAway: Double
@@ -108,8 +110,10 @@ class DogWalker: Codable {
         name: String,
         email: String,
         password: String,
-        profilePic: String,
-        rating: String,
+        profilePic: String? = nil,
+        rating: String? = nil,
+        bio: String? = nil,
+        galleryImages: [String]? = nil,
         address: String,
         location: [Double],
         distanceAway: Double = 0.0,
@@ -124,6 +128,8 @@ class DogWalker: Codable {
         self.password = password
         self.profilePic = profilePic
         self.rating = rating
+        self.bio = bio
+        self.galleryImages = galleryImages
         self.address = address
         self.location = location
         self.distanceAway = distanceAway
@@ -387,6 +393,7 @@ struct ScheduleDogWalkerRequest: Codable {
     var instructions: String
     var status: String
     var dogWalkerId: String
+    var petId: String?
     var duration: String
     var buildingNo: String?
     var houseNo: String?
@@ -420,6 +427,7 @@ struct ScheduleDogWalkerRequest: Codable {
         self.instructions = instructions
         self.dogWalkerId = dogWalkerId
         self.status = status
+        self.petId = data["petId"] as? String
         self.petImageUrl = data["petImageUrl"]  as? String
         self.petBreed = data["petBreed"]     as? String
         self.buildingNo = data["buildingNo"]   as? String

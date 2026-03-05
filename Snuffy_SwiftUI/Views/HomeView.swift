@@ -16,117 +16,162 @@ struct HomeView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     private let petCircleFill = Color(hex: "#FFD6E6")
 
+    private let myPetsSectionID = "MY_PETS_SECTION"
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Gradient Background
                 LinearGradient(
-                    colors: [
-                        snuffyPink.opacity(0.4),
-                        Color.white
-                    ],
+                    colors: [snuffyPink.opacity(0.4), Color.white],
                     startPoint: .top,
                     endPoint: .bottom
                 )
                 .ignoresSafeArea()
 
                 GeometryReader { geo in
-                    ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 0) {
+                    ScrollViewReader { proxy in
+                        ScrollView(showsIndicators: false) {
+                            VStack(alignment: .leading, spacing: 0) {
 
-                            // MARK: - Title "Explore"
-                            Text("Explore")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.black)
+                                // MARK: - Title + Profile Icon
+                                HStack(alignment: .center) {
+                                    Text("Explore")
+                                        .font(.system(size: 32, weight: .bold))
+                                        .foregroundColor(.black)
+
+                                    Spacer()
+
+                                    // Profile initials circle
+                                    Button {
+                                        viewModel.shouldNavigateToProfile = true
+                                    } label: {
+                                        ZStack {
+                                            Circle()
+                                                .fill(snuffyPink)
+                                                .frame(width: 42, height: 42)
+                                            Text(viewModel.userInitials)
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(.white)
+                                        }
+                                    }
+                                }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 20)
                                 .padding(.bottom, 20)
 
-                            // MARK: - Search Bar (native iOS style)
-                            SearchBarView(placeholder: "Which service are you looking for ?")
+                                // MARK: - Search Bar
+                                SearchBarView(
+                                    placeholder: "Which service are you looking for ?",
+                                    onSearch: { query in
+                                        handleSearch(query: query, proxy: proxy)
+                                    }
+                                )
                                 .padding(.horizontal, 20)
                                 .padding(.bottom, 30)
 
-                            // MARK: - Banner Image
-                            Image("Home Screen Banner")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(height: 120)
-                                .clipped()
-                                .cornerRadius(25)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 25)
+                                // MARK: - Pet search loading indicator
+                                if viewModel.isSearchingPet {
+                                    HStack {
+                                        ProgressView()
+                                            .padding(.leading, 20)
+                                        Text("Searching for pet…")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                        Spacer()
+                                    }
+                                    .padding(.bottom, 12)
+                                }
 
-                            // MARK: - My Pets Section
-                            Text("My Pets")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
+                                if let searchError = viewModel.petSearchError {
+                                    Text(searchError)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.red)
+                                        .padding(.horizontal, 20)
+                                        .padding(.bottom, 12)
+                                }
 
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 20) {
-                                    ForEach(viewModel.homePets) { pet in
-                                        PetCircleCardView(
-                                            pet: pet,
+                                // MARK: - Banner
+                                Image("Home Screen Banner")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(height: 120)
+                                    .clipped()
+                                    .cornerRadius(25)
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 25)
+
+                                // MARK: - My Pets Section
+                                Text("My Pets")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 20)
+                                    .id(myPetsSectionID)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 20) {
+                                        ForEach(viewModel.homePets) { pet in
+                                            PetCircleCardView(
+                                                pet: pet,
+                                                borderColor: snuffyPink,
+                                                fillColor: petCircleFill
+                                            )
+                                            .onTapGesture {
+                                                viewModel.selectedPet = pet
+                                                viewModel.shouldNavigateToPetProfile = true
+                                            }
+                                        }
+                                        AddPetCircleView(
                                             borderColor: snuffyPink,
                                             fillColor: petCircleFill
                                         )
                                         .onTapGesture {
-                                            viewModel.selectedPet = pet
-                                            viewModel.shouldNavigateToPetProfile = true
+                                            viewModel.moveToMyPets()
                                         }
                                     }
-
-                                    // Add Pet Button
-                                    AddPetCircleView(
-                                        borderColor: snuffyPink,
-                                        fillColor: petCircleFill
-                                    )
-                                    .onTapGesture {
-                                        viewModel.moveToMyPets()
-                                    }
+                                    .padding(.leading, 20)
+                                    .padding(.trailing, 20)
+                                    .padding(.bottom, 25)
                                 }
-                                .padding(.leading, 20)
-                                .padding(.trailing, 20)
-                                .padding(.bottom, 25)
+
+                                // MARK: - Our Services Section
+                                Text("Our Services")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 25)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        HomeServiceCard(
+                                            imageName: "Home1-2",
+                                            buttonTitle: "Book Caretake",
+                                            buttonColor: snuffyPink,
+                                            action: { viewModel.navigateToPetSitting() }
+                                        )
+                                        HomeServiceCard(
+                                            imageName: "Home2-2",
+                                            buttonTitle: "Book Caretake",
+                                            buttonColor: snuffyPink,
+                                            action: { viewModel.navigateToPetWalking() }
+                                        )
+                                    }
+                                    .padding(.leading, 20)
+                                    .padding(.trailing, 20)
+                                    .padding(.bottom, 40)
+                                }
                             }
-
-                            // MARK: - Our Services Section
-                            Text("Our Services")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 25)
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    // Pet Sitting Card
-                                    HomeServiceCard(
-                                        imageName: "Home1-2",
-                                        buttonTitle: "Book Caretake",
-                                        buttonColor: snuffyPink,
-                                        action: {
-                                            viewModel.navigateToPetSitting()
-                                        }
-                                    )
-
-                                    // Pet Walking Card
-                                    HomeServiceCard(
-                                        imageName: "Home2-2",
-                                        buttonTitle: "Book Caretake",
-                                        buttonColor: snuffyPink,
-                                        action: {
-                                            viewModel.navigateToPetWalking()
-                                        }
-                                    )
+                            .frame(width: geo.size.width)
+                        }
+                        // ✅ iOS 17+ two-param onChange, plain Bool (no $)
+                        .onChange(of: viewModel.shouldScrollToMyPets) { _, newValue in
+                            if newValue {
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    proxy.scrollTo(myPetsSectionID, anchor: .top)
                                 }
-                                .padding(.leading, 20)
-                                .padding(.trailing, 20)
-                                .padding(.bottom, 40)
+                                viewModel.shouldScrollToMyPets = false
                             }
                         }
-                        .frame(width: geo.size.width)
                     }
                 }
             }
@@ -136,7 +181,6 @@ struct HomeView: View {
                 viewModel.fetchUserNameAndSetupProfile()
                 viewModel.fetchPetsForHomeScreen()
             }
-            // MARK: - Navigation Destinations
             .navigationDestination(isPresented: $viewModel.shouldNavigateToProfile) {
                 UserProfileView(viewModel: viewModel)
             }
@@ -154,23 +198,60 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $viewModel.shouldNavigateToLogin) {
                 UserLoginView()
             }
-            .onChange(of: viewModel.shouldNavigateToLogin) { newValue in
+            // ✅ iOS 17+ two-param onChange syntax throughout
+            .onChange(of: viewModel.shouldNavigateToLogin) { _, newValue in
                 if newValue { dismiss() }
             }
-            .onChange(of: viewModel.shouldNavigateToMyPets) { navigate in
+            .onChange(of: viewModel.shouldNavigateToMyPets) { _, navigate in
                 if navigate {
                     selectedTab = 2
                     viewModel.shouldNavigateToMyPets = false
                 }
             }
+
         }
+    }
+
+    // MARK: - Search Handler
+    private func handleSearch(query: String, proxy: ScrollViewProxy) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let lower = trimmed.lowercased()
+
+        // 1. Dog walking
+        let walkingKeywords = ["dog walking", "dog walker", "walking", "walker", "walk"]
+        if walkingKeywords.contains(where: { lower.contains($0) }) {
+            viewModel.navigateToPetWalking()
+            return
+        }
+
+        // 2. Caretaker / pet sitting
+        let caretakerKeywords = ["caretaker", "caretake", "pet sitting", "sitting", "pet sit", "sitter"]
+        if caretakerKeywords.contains(where: { lower.contains($0) }) {
+            viewModel.navigateToPetSitting()
+            return
+        }
+
+        // 3. "pets" / "my pets" → scroll to section
+        let petsKeywords = ["my pets", "pets", "pet"]
+        if petsKeywords.contains(where: { lower == $0 }) {
+            viewModel.shouldScrollToMyPets = true   // ✅ plain assignment, no $
+            return
+        }
+
+        // 4. Specific pet name → search Firestore
+        viewModel.searchPetByName(trimmed)
     }
 }
 
 // MARK: - Search Bar View
 struct SearchBarView: View {
     let placeholder: String
+    var onSearch: ((String) -> Void)? = nil
+
     @State private var searchText: String = ""
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: 10) {
@@ -182,12 +263,27 @@ struct SearchBarView: View {
                 .font(.system(size: 15))
                 .foregroundColor(.black)
                 .autocorrectionDisabled()
+                .focused($isFocused)
+                .submitLabel(.search)
+                .onSubmit {
+                    onSearch?(searchText)
+                    isFocused = false
+                }
 
-            Spacer()
-
-            Image(systemName: "mic")
-                .font(.system(size: 16))
-                .foregroundColor(.gray)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                    onSearch?("")
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundColor(.gray)
+                }
+            } else {
+                Image(systemName: "mic")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -213,40 +309,30 @@ struct PetCircleCardView: View {
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
-                // Outer circle – pink border
                 Circle()
                     .strokeBorder(borderColor, lineWidth: borderWidth)
                     .frame(width: outerSize, height: outerSize)
 
-                // Fill behind the image
                 Circle()
                     .fill(fillColor)
                     .frame(width: outerSize - borderWidth * 2, height: outerSize - borderWidth * 2)
 
-                // Pet image (clipped to inner circle)
                 Group {
                     if let imageName = pet.petImage, !imageName.isEmpty {
                         if let url = URL(string: imageName), imageName.hasPrefix("http") {
                             AsyncImage(url: url) { phase in
                                 switch phase {
-                                case .empty:
-                                    ProgressView()
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
+                                case .empty:      ProgressView()
+                                case .success(let image): image.resizable().scaledToFill()
                                 case .failure:
                                     Image(systemName: "dog.fill")
                                         .font(.system(size: 32))
                                         .foregroundColor(borderColor)
-                                @unknown default:
-                                    EmptyView()
+                                @unknown default: EmptyView()
                                 }
                             }
                         } else {
-                            Image(imageName)
-                                .resizable()
-                                .scaledToFill()
+                            Image(imageName).resizable().scaledToFill()
                         }
                     } else {
                         Image(systemName: "dog.fill")
@@ -258,7 +344,6 @@ struct PetCircleCardView: View {
                 .clipShape(Circle())
             }
 
-            // Pet name label
             Text(pet.petName ?? "Pet")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.black)
@@ -278,17 +363,14 @@ struct AddPetCircleView: View {
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
-                // Outer circle – pink border
                 Circle()
                     .strokeBorder(borderColor, lineWidth: borderWidth)
                     .frame(width: outerSize, height: outerSize)
 
-                // Inner fill
                 Circle()
                     .fill(fillColor)
                     .frame(width: outerSize - borderWidth * 2, height: outerSize - borderWidth * 2)
 
-                // Plus icon
                 Image(systemName: "plus")
                     .font(.system(size: 28, weight: .medium))
                     .foregroundColor(borderColor)
@@ -315,14 +397,12 @@ struct HomeServiceCard: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 0) {
-                // Service image – fills the card above the button
                 Image(imageName)
                     .resizable()
                     .scaledToFill()
                     .frame(width: cardWidth, height: cardHeight - buttonHeight)
                     .clipped()
 
-                // Bottom button strip
                 Text(buttonTitle)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
@@ -334,7 +414,7 @@ struct HomeServiceCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
         }
-        .buttonStyle(.plain)   // removes default press opacity on the whole card
+        .buttonStyle(.plain)
     }
 }
 
