@@ -187,7 +187,7 @@ struct BookingCard: View {
     private let petCircleFill = Color(red: 255/255, green: 214/255, blue: 230/255)
     
     private let outerSize: CGFloat   = 70
-    private let innerSize: CGFloat   = 58
+    private let innerSize: CGFloat   = 60
     private let borderWidth: CGFloat = 3
     
     var body: some View {

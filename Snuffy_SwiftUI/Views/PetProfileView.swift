@@ -20,91 +20,132 @@ struct PetProfileView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background Gradient
-            LinearGradient(
-                colors: [snuffyPink.opacity(0.3), Color.clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 400)
-            .frame(maxHeight: .infinity, alignment: .top)
-            .ignoresSafeArea()
+        ZStack(alignment: .top) {
+            Color.white.ignoresSafeArea()
             
             if viewModel.isLoading {
                 ProgressView()
+                    .frame(maxHeight: .infinity)
             } else if let pet = viewModel.pet {
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Pet Image Section
-                        VStack(spacing: 16) {
-                            PetProfileImageView(imageUrl: pet.petImage)
+                // Fixed Image Background
+                GeometryReader { geo in
+                    PetProfileImageView(imageUrl: pet.petImage)
+                        .frame(width: geo.size.width, height: 400 + geo.safeAreaInsets.top)
+                        .clipped()
+                        .ignoresSafeArea(edges: .top)
+                }
+                
+                // Scrollable Content
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Spacer to push the white sheet down
+                        Spacer()
+                            .frame(height: 340)
+                        
+                        // Bottom Sheet
+                        VStack(alignment: .leading, spacing: 24) {
                             
-                            VStack(spacing: 4) {
+                            // Name & Breed
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(pet.petName ?? "Unknown")
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(.system(size: 36, weight: .bold))
                                     .foregroundColor(.black)
                                 
                                 Text(pet.petBreed ?? "Unknown")
-                                    .font(.system(size: 18))
+                                    .font(.system(size: 20))
                                     .foregroundColor(.gray)
                             }
-                        }
-                        .padding(.top, 20)
-                        
-                        // Pet Info Container (Pink Tinted Box)
-                        HStack(spacing: 0) {
-                            InfoItem(title: "Weight", value: pet.petWeight ?? "Unknown")
-                            InfoItem(title: "Gender", value: pet.petGender ?? "Unknown")
-                            InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
-                        }
-                        .padding(.vertical, 16)
-                        .background(snuffyPink.opacity(0.1))
-                        .cornerRadius(12)
-                        .padding(.horizontal, 16)
-                        
-                        // Options List
-                        VStack(spacing: 0) {
-                            NavigationLink(destination: PetVaccinationListView(petId: petId)) {
-                                ProfileOptionRow(title: "Pet Vaccinations", icon: "syringe.fill")
-                            }
-                            Divider().padding(.leading, 72)
+                            .padding(.top, 32)
+                            .padding(.horizontal, 24)
                             
-                            NavigationLink(destination: PetDietListView(petId: petId)) {
-                                ProfileOptionRow(title: "Pet Diet", icon: "fork.knife")
+                            // Info Box
+                            HStack(spacing: 0) {
+                                InfoItem(title: "Weight", value: pet.petWeight ?? "Unknown")
+                                InfoItem(title: "Gender", value: pet.petGender ?? "Unknown")
+                                InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
                             }
-                            Divider().padding(.leading, 72)
+                            .padding(.vertical, 20)
+                            .background(snuffyPink.opacity(0.15))
+                            .cornerRadius(16)
+                            .padding(.horizontal, 24)
                             
-                            NavigationLink(destination: PetMedicationListView(petId: petId)) {
-                                ProfileOptionRow(title: "Pet Medications", icon: "pills.fill")
+                            // Options List
+                            VStack(spacing: 0) {
+                                NavigationLink(destination: PetVaccinationListView(petId: petId)) {
+                                    ProfileOptionRow(title: "Pet Vaccinations", icon: "syringe.fill")
+                                }
+                                Divider().padding(.leading, 72)
+                                
+                                NavigationLink(destination: PetDietListView(petId: petId)) {
+                                    ProfileOptionRow(title: "Pet Diet", icon: "fork.knife")
+                                }
+                                Divider().padding(.leading, 72)
+                                
+                                NavigationLink(destination: PetMedicationListView(petId: petId)) {
+                                    ProfileOptionRow(title: "Pet Medications", icon: "pills.fill")
+                                }
                             }
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                            .padding(.horizontal, 24)
+                            
+                            Spacer()
+                                .frame(height: 60)
                         }
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            ZStack {
+                                Color.white // To block the image showing underneath
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0), snuffyPink.opacity(0.3)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            }
+                        )
+                        .clipShape(RoundedCorner(radius: 40, corners: [.topLeft, .topRight]))
                     }
-                    .padding(.bottom, 40)
                 }
-            }
-        }
-        .navigationTitle("Pet Profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button(role: .destructive) {
-                        viewModel.shouldShowDeleteAlert = true
+                .ignoresSafeArea(edges: .bottom)
+                
+                // Custom Navigation Bar Overlay
+                HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.black)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    Spacer()
+                    
+                    Menu {
+                        Button(role: .destructive) {
+                            viewModel.shouldShowDeleteAlert = true
+                        } label: {
+                            Label("Delete Pet", systemImage: "trash")
+                        }
                     } label: {
-                        Label("Delete Pet", systemImage: "trash")
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(snuffyPink)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .foregroundColor(snuffyPink)
-                        .font(.system(size: 20))
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
             }
         }
+        .navigationBarHidden(true)
         .alert("Delete Pet", isPresented: $viewModel.shouldShowDeleteAlert) {
             Button("Delete", role: .destructive) {
                 viewModel.deletePet()
@@ -124,7 +165,7 @@ struct PetProfileView: View {
 struct PetProfileImageView: View {
     let imageUrl: String?
     @State private var uiImage: UIImage?
-    private let snuffyPink = Color(uiColor: .systemPink)
+    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
         ZStack {
@@ -138,8 +179,6 @@ struct PetProfileImageView: View {
                     .scaledToFill()
             }
         }
-        .frame(width: 180, height: 180)
-        .clipShape(Circle())
         .onAppear {
             loadPetImage()
         }
@@ -187,7 +226,7 @@ struct InfoItem: View {
 struct ProfileOptionRow: View {
     let title: String
     let icon: String
-    private let snuffyPink = Color(uiColor: .systemPink)
+    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
         HStack(spacing: 16) {
@@ -207,6 +246,17 @@ struct ProfileOptionRow: View {
         }
         .padding(16)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Custom Shapes
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
     }
 }
 

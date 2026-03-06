@@ -16,13 +16,13 @@ struct PetCardView: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 140)
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 140, maxHeight: 140)
                     .clipped()
             } else {
                 Image("DogPlaceholder")
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 140)
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 140, maxHeight: 140)
                     .clipped()
                     .onAppear {
                         loadPetImage()
