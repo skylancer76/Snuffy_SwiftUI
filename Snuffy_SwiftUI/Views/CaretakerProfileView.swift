@@ -53,7 +53,7 @@ struct CaretakerProfileView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
                                     Text(ct.name)
-                                        .font(.system(size: 36, weight: .bold))
+                                        .font(.system(size: 28, weight: .bold))
                                         .foregroundColor(.black)
                                     
                                     Spacer()
@@ -62,38 +62,38 @@ struct CaretakerProfileView: View {
                                     if let rating = ct.rating {
                                         HStack(spacing: 4) {
                                             Image(systemName: "star.fill")
-                                                .font(.system(size: 12, weight: .semibold))
+                                                .font(.system(size: 12, weight: .medium))
                                             Text(String(rating))
-                                                .font(.system(size: 14, weight: .bold))
+                                                .font(.system(size: 14, weight: .medium))
                                         }
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
                                         .background(Color.yellow)
-                                        .cornerRadius(12)
+                                        .cornerRadius(7)
                                     }
                                 }
                                 
-                                Text(ct.address)
-                                    .font(.system(size: 20))
+                                Text(ct.address.trimmingCharacters(in: .whitespacesAndNewlines))
+                                    .font(.system(size: 16, weight: .regular))
                                     .foregroundColor(.gray)
                             }
                             .padding(.top, 32)
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, 20)
                             
                             // Horizontal stat card
                             statCard(ct)
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, 20)
                             
                             // About Caretaker
                             if !ct.bio.isEmpty {
                                 aboutSection(title: "About Caretaker", bio: ct.bio)
-                                    .padding(.horizontal, 24)
+                                    .padding(.horizontal, 20)
                             }
                             
                             // Gallery
                             if !viewModel.resolvedGalleryURLs.isEmpty {
                                 gallerySection(viewModel.resolvedGalleryURLs)
-                                    .padding(.horizontal, 24)
+                                    .padding(.horizontal, 20)
                                     .padding(.bottom, 50)
                             }
                             
@@ -211,9 +211,9 @@ struct CaretakerProfileView: View {
     private func statCard(_ ct: Caretakers) -> some View {
         HStack(spacing: 0) {
             // Distance
+            let rawDistance = viewModel.distanceText.replacingOccurrences(of: " away", with: "")
             statItem(
-                value: viewModel.distanceText
-                    .replacingOccurrences(of: " away", with: ""),
+                value: rawDistance == "Distance unavailable" ? "N/A" : rawDistance,
                 label: "Distance"
             )
 
@@ -284,8 +284,6 @@ struct CaretakerProfileView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-}
-
 }
 
 // MARK: - Custom Views
