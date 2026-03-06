@@ -19,23 +19,37 @@ struct MyPetsView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
-                // Background Gradient
                 LinearGradient(
-                    colors: [snuffyPink.opacity(0.4), Color.white, Color.white],
+                    colors: [snuffyPink.opacity(0.4), Color.white],
                     startPoint: .top,
                     endPoint: .bottom
                 )
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Custom Header
-                    HStack {
+
+                    HStack(alignment: .center) {
                         Text("My Pets")
-                            .font(.system(size: 42, weight: .bold))
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.black)
+                        
                         Spacer()
+                        
+                        Button {
+                            viewModel.shouldShowAddPet = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(snuffyPink)
+                                .clipShape(Circle())
+                                .shadow(color: snuffyPink.opacity(0.4), radius: 5, x: 0, y: 3)
+                        }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
                     .padding(.top, 20)
+                    .padding(.bottom, 15)
                     
                     if viewModel.isLoading && viewModel.pets.isEmpty {
                         Spacer()
@@ -65,27 +79,11 @@ struct MyPetsView: View {
                                 }
                             }
                             .padding(16)
-                            .padding(.bottom, 160) // Extra padding for buttons and floating bar
+                            .padding(.bottom, 100) // Extra padding for floating bar
                         }
                     }
                 }
                 
-                // Add New Pet Button
-                VStack(spacing: 0) {
-                    Button(action: {
-                        viewModel.shouldShowAddPet = true
-                    }) {
-                        Text("Add New Pet")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(snuffyPink)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 80) // Above floating tab bar
-                }
             }
             .navigationBarHidden(true)
             .navigationDestination(isPresented: $viewModel.shouldNavigateToPetProfile) {

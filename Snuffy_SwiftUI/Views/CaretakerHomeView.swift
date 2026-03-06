@@ -9,7 +9,6 @@ struct CaretakerHomeView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header with Profile Icon
             HStack {
                 Text("Home")
                     .font(.system(size: 32, weight: .bold))

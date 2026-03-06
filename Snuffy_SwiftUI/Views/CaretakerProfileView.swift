@@ -18,60 +18,146 @@ struct CaretakerProfileView: View {
     @StateObject private var viewModel = CaretakerProfileViewModel()
     @Environment(\.dismiss) private var dismiss
 
+    @State private var isShareSheetPresented = false
+    
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     private let columns = [GridItem(.flexible(), spacing: 8),
                            GridItem(.flexible(), spacing: 8)]
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-
-            // Standardized gradient (matches HomeView)
-            LinearGradient(
-                colors: [snuffyPink.opacity(0.4), Color.white],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            Color.white
-                .padding(.top, 400)
-                .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    // Space for back button overlay
-                    Color.clear.frame(height: 50)
-
-                    if viewModel.isLoading {
-                        loadingView
-                    } else if let ct = viewModel.caretaker {
-                        profileContent(ct)
-                    } else if let err = viewModel.errorMessage {
-                        errorView(err)
+        ZStack(alignment: .top) {
+            Color.white.ignoresSafeArea()
+            
+            if viewModel.isLoading {
+                loadingView
+                    .frame(maxHeight: .infinity)
+            } else if let ct = viewModel.caretaker {
+                // Fixed Image Background
+                GeometryReader { geo in
+                    profileImageView()
+                        .frame(width: geo.size.width, height: 400 + geo.safeAreaInsets.top)
+                        .clipped()
+                        .ignoresSafeArea(edges: .top)
+                }
+                
+                // Scrollable Content
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Spacer()
+                            .frame(height: 340)
+                        
+                        // Bottom Sheet
+                        VStack(alignment: .leading, spacing: 24) {
+                            
+                            // Name & Breed/Location
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(ct.name)
+                                        .font(.system(size: 36, weight: .bold))
+                                        .foregroundColor(.black)
+                                    
+                                    Spacer()
+                                    
+                                    // small rating badge inline with name
+                                    if let rating = ct.rating {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "star.fill")
+                                                .font(.system(size: 12, weight: .semibold))
+                                            Text(String(rating))
+                                                .font(.system(size: 14, weight: .bold))
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(Color.yellow)
+                                        .cornerRadius(12)
+                                    }
+                                }
+                                
+                                Text(ct.address)
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.top, 32)
+                            .padding(.horizontal, 24)
+                            
+                            // Horizontal stat card
+                            statCard(ct)
+                                .padding(.horizontal, 24)
+                            
+                            // About Caretaker
+                            if !ct.bio.isEmpty {
+                                aboutSection(title: "About Caretaker", bio: ct.bio)
+                                    .padding(.horizontal, 24)
+                            }
+                            
+                            // Gallery
+                            if !viewModel.resolvedGalleryURLs.isEmpty {
+                                gallerySection(viewModel.resolvedGalleryURLs)
+                                    .padding(.horizontal, 24)
+                                    .padding(.bottom, 50)
+                            }
+                            
+                            Spacer()
+                                .frame(height: 60)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            ZStack {
+                                Color.white
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0), snuffyPink.opacity(0.3)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            }
+                        )
+                        .clipShape(RoundedCorner(radius: 40, corners: [.topLeft, .topRight]))
                     }
                 }
-            }
-
-            // Back + share button row (matching snuffy-main nav bar style)
-            HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(snuffyPink)
-                    Text("Booking Info")
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(snuffyPink)
+                .ignoresSafeArea(edges: .bottom)
+                
+                // Custom Navigation Bar Overlay
+                HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.black)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        isShareSheetPresented = true
+                    }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(snuffyPink)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
                 }
-                Spacer()
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 18))
-                    .foregroundColor(snuffyPink)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                
+            } else if let err = viewModel.errorMessage {
+                errorView(err)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 14)
         }
         .navigationBarHidden(true)
         .onAppear { viewModel.load(caretakerId: caretakerId) }
+        .sheet(isPresented: $isShareSheetPresented) {
+            if let ct = viewModel.caretaker {
+                ShareSheet(items: ["Check out \(ct.name)'s profile for pet sitting on Snuffy!"])
+            }
+        }
     }
 
     // MARK: - Loading
@@ -93,61 +179,15 @@ struct CaretakerProfileView: View {
             .padding(.top, 120)
     }
 
-    // MARK: - Profile Content
-    @ViewBuilder
-    private func profileContent(_ ct: Caretakers) -> some View {
-        VStack(spacing: 0) {
+    // (Old profile content functions removed manually, logic is directly in the body ViewBuilder now)
 
-            // 1. Circular profile image
-            profileImageView()
-                .padding(.top, 10)
-                .padding(.bottom, 14)
-
-            // 2. Name
-            Text(ct.name)
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.black)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 4)
-
-            // 3. Address (plain gray text — no icon, matching screenshot)
-            Text(ct.address)
-                .font(.system(size: 15))
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
-                .padding(.bottom, 20)
-
-            // 4. Horizontal stat card: Rating | Distance | Pets Sitted
-            statCard(ct)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 28)
-
-            // 5. About the Caretaker
-            if !ct.bio.isEmpty {
-                aboutSection(title: "About the Caretaker", bio: ct.bio)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 28)
-            }
-
-            // 6. Gallery
-            if !viewModel.resolvedGalleryURLs.isEmpty {
-                gallerySection(viewModel.resolvedGalleryURLs)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 50)
-            }
-        }
-    }
-
-    // MARK: - Profile Image (circular, 130pt, matching screenshot)
+    // MARK: - Profile Image
     private func profileImageView() -> some View {
         Group {
             if let url = viewModel.resolvedProfilePicURL {
                 KFImage(url)
                     .placeholder {
-                        Circle()
-                            .fill(Color(UIColor.systemGray5))
+                        Color(UIColor.systemGray5)
                             .overlay(
                                 Image(systemName: "person.fill")
                                     .font(.system(size: 40))
@@ -156,12 +196,8 @@ struct CaretakerProfileView: View {
                     }
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 140, height: 140)
-                    .clipShape(Circle())
             } else {
-                Circle()
-                    .fill(Color(UIColor.systemGray5))
-                    .frame(width: 140, height: 140)
+                Color(UIColor.systemGray5)
                     .overlay(
                         Image(systemName: "person.fill")
                             .font(.system(size: 50))
@@ -171,17 +207,9 @@ struct CaretakerProfileView: View {
         }
     }
 
-    // MARK: - Horizontal Stat Card (matches caretakerDetailsInfo in snuffy-main)
+    // MARK: - Horizontal Stat Card
     private func statCard(_ ct: Caretakers) -> some View {
         HStack(spacing: 0) {
-            // Rating
-            statItem(
-                value: ct.rating.map { "\($0) ★" } ?? "N/A",
-                label: "Rating"
-            )
-
-            dividerLine
-
             // Distance
             statItem(
                 value: viewModel.distanceText
@@ -189,17 +217,21 @@ struct CaretakerProfileView: View {
                 label: "Distance"
             )
 
-            dividerLine
+            // Experience (Mocked for now as we don't have this field yet)
+            statItem(
+                value: "4+",
+                label: "Years of Experience"
+            )
 
             // Pets Sitted
             statItem(
-                value: "\(ct.completedRequests)",
+                value: "\(ct.completedRequests)+",
                 label: "Pets Sitted"
             )
         }
-        .padding(.vertical, 16)
-        .background(Color(UIColor.systemPink).opacity(0.1))
-        .cornerRadius(12)
+        .padding(.vertical, 20)
+        .background(snuffyPink.opacity(0.15))
+        .cornerRadius(16)
     }
 
     private func statItem(value: String, label: String) -> some View {
@@ -216,11 +248,7 @@ struct CaretakerProfileView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var dividerLine: some View {
-        Rectangle()
-            .fill(Color.gray.opacity(0.3))
-            .frame(width: 1, height: 36)
-    }
+    // Removed divider line
 
     // MARK: - About Section
     private func aboutSection(title: String, bio: String) -> some View {
@@ -258,6 +286,18 @@ struct CaretakerProfileView: View {
     }
 }
 
+}
+
+// MARK: - Custom Views
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
 
 #Preview {
     NavigationStack {
