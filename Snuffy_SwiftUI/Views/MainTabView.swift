@@ -48,6 +48,10 @@ struct MainTabView: View {
                             MyBookingsView()
                         case 2:
                             MyPetsView()
+                        case 3:
+                            NavigationStack {
+                                CommunityView()
+                            }
                         default:
                             HomeView(selectedTab: $selectedTab)
                         }
@@ -76,7 +80,7 @@ struct MainTabView: View {
                         .fill(.ultraThinMaterial)
                         .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 4)
                 )
-                .padding(.horizontal, 28)
+                .padding(.horizontal, 14)
                 .padding(.bottom, 12)
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -93,7 +97,8 @@ struct MainTabView: View {
             return [
                 ("heart.fill",          "Home"),
                 ("list.clipboard.fill", "My Bookings"),
-                ("pawprint.fill",       "My Pets")
+                ("pawprint.fill",       "My Pets"),
+                ("person.3.fill",       "Community")
             ]
         }
     }
@@ -145,7 +150,7 @@ struct CaregiverMainTabView: View {
                     .fill(.ultraThinMaterial)
                     .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 4)
             )
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 14)
             .padding(.bottom, 12)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -175,13 +180,15 @@ struct TabButton: View {
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                 Text(label)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 9, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundColor(isSelected ? color : Color(.black))
             .padding(.vertical, 7)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 4)
             .frame(maxWidth: .infinity)
             .background {
                 if isSelected {
