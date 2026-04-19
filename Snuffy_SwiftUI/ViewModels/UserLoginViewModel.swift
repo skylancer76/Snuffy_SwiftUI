@@ -128,7 +128,7 @@ class UserLoginViewModel: ObservableObject {
     private func checkIfUserIsDogWalker(userID: String, completion: @escaping (Bool) -> Void) {
         let db = Firestore.firestore()
         let dogWalkersRef = db.collection("dogwalkers")
-        
+
         dogWalkersRef.whereField("dogWalkerId", isEqualTo: userID).getDocuments { snapshot, error in
             if let error = error {
                 print("Error verifying dog walker role: \(error.localizedDescription)")

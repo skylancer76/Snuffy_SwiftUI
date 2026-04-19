@@ -1,0 +1,50 @@
+# IDE
+.idea/
+*.swp
+*.swo
+
+# MacOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcworkspace
+!default.xcworkspace
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.swp
+*.lock
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.perspectivev3
+DerivedData
+Logs
+project.xcworkspace
+Contents.json
+IDETemplateMacros.plist
+XCUserData
+*.moved-aside
+*.xcuserstate
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Firebase
+firebase-debug.log
+.firebase/
+
+# Node
+node_modules/
+functions/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local test files
+test_sendgrid.json
+grep_results.txt
+
