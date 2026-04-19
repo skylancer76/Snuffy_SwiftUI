@@ -51,7 +51,7 @@ struct WaitingListView: View {
                 .padding(.bottom, 36)
 
                 // Heading
-                Text("You're on the waitlist! 🎉")
+                Text("You're on the Waitlist!")
                     .font(.system(size: 26, weight: .bold))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.primary)
