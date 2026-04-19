@@ -186,9 +186,7 @@ struct BookingCard: View {
     private let snuffyPink    = Color(red: 1.0, green: 0.4, blue: 0.6)
     private let petCircleFill = Color(red: 255/255, green: 214/255, blue: 230/255)
     
-    private let outerSize: CGFloat   = 70
-    private let innerSize: CGFloat   = 60
-    private let borderWidth: CGFloat = 3
+    private let imageSize: CGFloat = 75
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -196,20 +194,13 @@ struct BookingCard: View {
                 
                 // MARK: - Pet Image
                 ZStack {
-                    // Outer pink border ring
-                    Circle()
-                        .strokeBorder(snuffyPink, lineWidth: borderWidth)
-                        .frame(width: outerSize, height: outerSize)
-                    
-                    // Pink fill background
                     Circle()
                         .fill(petCircleFill)
-                        .frame(width: outerSize - borderWidth * 2,
-                               height: outerSize - borderWidth * 2)
-                    
+                        .frame(width: imageSize, height: imageSize)
+                        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
                     
                     petImageView
-                        .frame(width: innerSize, height: innerSize)
+                        .frame(width: imageSize, height: imageSize)
                         .clipShape(Circle())
                 }
                 
