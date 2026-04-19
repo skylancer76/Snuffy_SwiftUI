@@ -29,6 +29,12 @@ class Caretakers: Codable {
     var pendingRequests: [String]
     var completedRequests: Int
     var phoneNumber: String?
+    // Onboarding fields
+    var isVerified: Bool?
+    var isProfileComplete: Bool?
+    var certification: String?
+    var lor: String?
+    var petsHandled: Int?
     var latitude: Double? {
             return location.count > 0 ? location[0] : nil
         }
@@ -55,7 +61,12 @@ class Caretakers: Codable {
         status: String = "available",
         pendingRequests: [String] = [],
         completedRequests: Int = 0,
-        phoneNumber: String? = nil
+        phoneNumber: String? = nil,
+        isVerified: Bool? = false,
+        isProfileComplete: Bool? = false,
+        certification: String? = nil,
+        lor: String? = nil,
+        petsHandled: Int? = 0
     ) {
         self.caretakerId = caretakerId
         self.name = name
@@ -74,6 +85,11 @@ class Caretakers: Codable {
         self.pendingRequests = pendingRequests
         self.completedRequests = completedRequests
         self.phoneNumber = phoneNumber
+        self.isVerified = isVerified
+        self.isProfileComplete = isProfileComplete
+        self.certification = certification
+        self.lor = lor
+        self.petsHandled = petsHandled
     }
 }
 
@@ -97,6 +113,12 @@ class DogWalker: Codable {
     var pendingRequests: [String]
     var completedRequests: Int
     var phoneNumber: String?
+    // Onboarding fields
+    var isVerified: Bool?
+    var isProfileComplete: Bool?
+    var certification: String?
+    var lor: String?
+    var petsHandled: Int?
     var latitude: Double? {
             return location.count > 0 ? location[0] : nil
         }
@@ -120,7 +142,12 @@ class DogWalker: Codable {
         status: String = "available",
         pendingRequests: [String] = [],
         completedRequests: Int = 0,
-        phoneNumber: String? = nil
+        phoneNumber: String? = nil,
+        isVerified: Bool? = false,
+        isProfileComplete: Bool? = false,
+        certification: String? = nil,
+        lor: String? = nil,
+        petsHandled: Int? = 0
     ) {
         self.dogWalkerId = dogWalkerId
         self.name = name
@@ -137,6 +164,11 @@ class DogWalker: Codable {
         self.pendingRequests = pendingRequests
         self.completedRequests = completedRequests
         self.phoneNumber = phoneNumber
+        self.isVerified = isVerified
+        self.isProfileComplete = isProfileComplete
+        self.certification = certification
+        self.lor = lor
+        self.petsHandled = petsHandled
     }
 }
 

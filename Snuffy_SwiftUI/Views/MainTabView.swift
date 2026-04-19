@@ -26,18 +26,26 @@ struct MainTabView: View {
                 // Main Content
                 Group {
                     if isCaregiver {
-                        switch selectedTab {
-                        case 0:
+                        // MARK: Caregiver Entry Blocker
+                        if !roleVM.isProfileComplete {
+                            // Step 1 — New caregiver: collect profile details
                             NavigationStack {
-                                CaretakerHomeView()
+                                CaregiverOnboardingView(role: roleVM.role, roleVM: roleVM)
                             }
-                        case 1:
+                        } else if !roleVM.isVerified {
+                            // Step 2 — Profile submitted: wait for admin approval
                             NavigationStack {
-                                CaregiverBookingsView()
+                                WaitingListView(roleVM: roleVM)
                             }
-                        default:
-                            NavigationStack {
-                                CaretakerHomeView()
+                        } else {
+                            // Step 3 — Approved: show normal caregiver home
+                            switch selectedTab {
+                            case 0:
+                                NavigationStack { CaretakerHomeView() }
+                            case 1:
+                                NavigationStack { CaregiverBookingsView() }
+                            default:
+                                NavigationStack { CaretakerHomeView() }
                             }
                         }
                     } else {
@@ -59,31 +67,35 @@ struct MainTabView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Floating Tab Bar
-                HStack(spacing: 0) {
-                    ForEach(currentTabItems.indices, id: \.self) { i in
-                        let item = currentTabItems[i]
-                        TabButton(
-                            index: i,
-                            icon: item.icon,
-                            label: item.label,
-                            selectedTab: $selectedTab,
-                            color: snuffyPink,
-                            namespace: tabAnimation
-                        )
+                // Floating Tab Bar — hidden during onboarding / waitlist
+                if showTabBar {
+                    HStack(spacing: 0) {
+                        ForEach(currentTabItems.indices, id: \.self) { i in
+                            let item = currentTabItems[i]
+                            TabButton(
+                                index: i,
+                                icon: item.icon,
+                                label: item.label,
+                                selectedTab: $selectedTab,
+                                color: snuffyPink,
+                                namespace: tabAnimation
+                            )
+                        }
                     }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 4)
+                    )
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 4)
-                )
-                .padding(.horizontal, 14)
-                .padding(.bottom, 12)
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
+            .animation(.spring(response: 0.35), value: showTabBar)
         }
     }
 
@@ -101,6 +113,15 @@ struct MainTabView: View {
                 ("person.3.fill",       "Community")
             ]
         }
+    }
+
+    /// The floating tab bar is hidden while a caregiver is still
+    /// in the onboarding or waiting-for-approval flow.
+    private var showTabBar: Bool {
+        if isCaregiver {
+            return roleVM.isProfileComplete && roleVM.isVerified
+        }
+        return true
     }
 }
 
