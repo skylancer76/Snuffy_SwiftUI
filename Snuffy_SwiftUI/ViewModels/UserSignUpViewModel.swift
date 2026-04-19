@@ -97,15 +97,20 @@ class UserSignUpViewModel: ObservableObject {
                 }
                 return
             }
-            
-            // Save user data based on role
-            switch self.selectedRole {
-            case .petOwner:
-                self.saveUserDataToFirestore(uid: user.uid)
-            case .caretaker:
-                self.saveCaretakerDataToFirestore(uid: user.uid)
-            case .dogWalker:
-                self.saveDogWalkerDataToFirestore(uid: user.uid)
+
+            // Set Firebase Auth displayName so notifications can read real name
+            let changeRequest = user.createProfileChangeRequest()
+            changeRequest.displayName = self.name
+            changeRequest.commitChanges { _ in
+                // Save user data based on role (proceed regardless of profile update error)
+                switch self.selectedRole {
+                case .petOwner:
+                    self.saveUserDataToFirestore(uid: user.uid)
+                case .caretaker:
+                    self.saveCaretakerDataToFirestore(uid: user.uid)
+                case .dogWalker:
+                    self.saveDogWalkerDataToFirestore(uid: user.uid)
+                }
             }
         }
     }
@@ -151,6 +156,8 @@ class UserSignUpViewModel: ObservableObject {
             "status": "available",
             "pendingRequests": [],
             "completedRequests": 0,
+            "isVerified": false,
+            "isProfileComplete": false,
             "createdAt": Timestamp()
         ]
         
@@ -185,10 +192,12 @@ class UserSignUpViewModel: ObservableObject {
             "pendingRequests": [],
             "completedRequests": 0,
             "phoneNumber": "",
+            "isVerified": false,
+            "isProfileComplete": false,
             "createdAt": Timestamp()
         ]
         
-        db.collection("dogWalkers").document(uid).setData(data) { [weak self] error in
+        db.collection("dogwalkers").document(uid).setData(data) { [weak self] error in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
