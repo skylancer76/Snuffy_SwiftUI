@@ -57,7 +57,7 @@ struct HomeView: View {
                                 }
                                 .padding(.horizontal, 20)
                                 .padding(.top, 20)
-                                .padding(.bottom, 20)
+                                .padding(.bottom, 30)
 
                                 // MARK: - Search Bar
                                 SearchBarView(
@@ -100,6 +100,40 @@ struct HomeView: View {
                                     .padding(.horizontal, 20)
                                     .padding(.bottom, 25)
 
+                                // MARK: - Our Services Section
+                                Text("Our Services")
+                                    .font(.system(size: 22, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 25)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        Button(action: { viewModel.navigateToPetSitting() }) {
+                                            Image("Caretaker Banner")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 175, height: 185)
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                        }
+                                        .buttonStyle(.plain)
+
+                                        Button(action: { viewModel.navigateToPetWalking() }) {
+                                            Image("Dog Walker Banner")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 175, height: 185)
+                                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    .padding(.leading, 20)
+                                    .padding(.trailing, 20)
+                                    .padding(.bottom, 25)
+                                }
+
                                 // MARK: - My Pets Section
                                 Text("My Pets")
                                     .font(.system(size: 22, weight: .bold))
@@ -131,39 +165,11 @@ struct HomeView: View {
                                     }
                                     .padding(.leading, 20)
                                     .padding(.trailing, 20)
-                                    .padding(.bottom, 25)
-                                }
-
-                                // MARK: - Our Services Section
-                                Text("Our Services")
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundColor(.black)
-                                    .padding(.horizontal, 20)
-                                    .padding(.bottom, 25)
-
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        HomeServiceCard(
-                                            imageName: "Home1-2",
-                                            buttonTitle: "Book Caretake",
-                                            buttonColor: snuffyPink,
-                                            action: { viewModel.navigateToPetSitting() }
-                                        )
-                                        HomeServiceCard(
-                                            imageName: "Home2-2",
-                                            buttonTitle: "Book Caretake",
-                                            buttonColor: snuffyPink,
-                                            action: { viewModel.navigateToPetWalking() }
-                                        )
-                                    }
-                                    .padding(.leading, 20)
-                                    .padding(.trailing, 20)
                                     .padding(.bottom, 40)
                                 }
                             }
                             .frame(width: geo.size.width)
                         }
-                        // ✅ iOS 17+ two-param onChange, plain Bool (no $)
                         .onChange(of: viewModel.shouldScrollToMyPets) { _, newValue in
                             if newValue {
                                 withAnimation(.easeInOut(duration: 0.5)) {
@@ -198,7 +204,6 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $viewModel.shouldNavigateToLogin) {
                 UserLoginView()
             }
-            // ✅ iOS 17+ two-param onChange syntax throughout
             .onChange(of: viewModel.shouldNavigateToLogin) { _, newValue in
                 if newValue { dismiss() }
             }
@@ -236,7 +241,7 @@ struct HomeView: View {
         // 3. "pets" / "my pets" → scroll to section
         let petsKeywords = ["my pets", "pets", "pet"]
         if petsKeywords.contains(where: { lower == $0 }) {
-            viewModel.shouldScrollToMyPets = true   // ✅ plain assignment, no $
+            viewModel.shouldScrollToMyPets = true
             return
         }
 
@@ -252,23 +257,34 @@ struct SearchBarView: View {
 
     @State private var searchText: String = ""
     @FocusState private var isFocused: Bool
+    
+    private let iconColor = Color.black.opacity(0.5)
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 15))
-                .foregroundColor(.gray)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(iconColor)
 
-            TextField(placeholder, text: $searchText)
-                .font(.system(size: 15))
-                .foregroundColor(.black)
-                .autocorrectionDisabled()
-                .focused($isFocused)
-                .submitLabel(.search)
-                .onSubmit {
-                    onSearch?(searchText)
-                    isFocused = false
+            ZStack(alignment: .leading) {
+                if searchText.isEmpty {
+                    Text(placeholder)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(iconColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
+                TextField("", text: $searchText)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(.black)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        onSearch?(searchText)
+                        isFocused = false
+                    }
+            }
 
             if !searchText.isEmpty {
                 Button {
@@ -276,23 +292,15 @@ struct SearchBarView: View {
                     onSearch?("")
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 15))
-                        .foregroundColor(.gray)
+                        .font(.system(size: 18))
+                        .foregroundColor(iconColor)
                 }
-            } else {
-                Image(systemName: "mic")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(25)
-        .overlay(
-            RoundedRectangle(cornerRadius: 25)
-                .stroke(Color.gray.opacity(1), lineWidth: 1)
-        )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 13)
+        .background(Color.black.opacity(0.08))
+        .clipShape(Capsule())
     }
 }
 
@@ -302,20 +310,15 @@ struct PetCircleCardView: View {
     let borderColor: Color
     let fillColor: Color
 
-    private let outerSize: CGFloat = 100
-    private let innerSize: CGFloat = 88
-    private let borderWidth: CGFloat = 3
+    private let imageSize: CGFloat = 110
 
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .strokeBorder(borderColor, lineWidth: borderWidth)
-                    .frame(width: outerSize, height: outerSize)
-
-                Circle()
                     .fill(fillColor)
-                    .frame(width: outerSize - borderWidth * 2, height: outerSize - borderWidth * 2)
+                    .frame(width: imageSize, height: imageSize)
+                    .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 4)
 
                 Group {
                     if let imageName = pet.petImage, !imageName.isEmpty {
@@ -340,7 +343,7 @@ struct PetCircleCardView: View {
                             .foregroundColor(borderColor)
                     }
                 }
-                .frame(width: innerSize, height: innerSize)
+                .frame(width: imageSize, height: imageSize)
                 .clipShape(Circle())
             }
 
@@ -357,22 +360,18 @@ struct AddPetCircleView: View {
     let borderColor: Color
     let fillColor: Color
 
-    private let outerSize: CGFloat = 100
-    private let borderWidth: CGFloat = 3
+    private let imageSize: CGFloat = 110
 
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .strokeBorder(borderColor, lineWidth: borderWidth)
-                    .frame(width: outerSize, height: outerSize)
-
-                Circle()
                     .fill(fillColor)
-                    .frame(width: outerSize - borderWidth * 2, height: outerSize - borderWidth * 2)
+                    .frame(width: imageSize, height: imageSize)
+                    .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 4)
 
                 Image(systemName: "plus")
-                    .font(.system(size: 28, weight: .medium))
+                    .font(.system(size: 32, weight: .medium))
                     .foregroundColor(borderColor)
             }
 
@@ -383,40 +382,7 @@ struct AddPetCircleView: View {
     }
 }
 
-// MARK: - Home Service Card View
-struct HomeServiceCard: View {
-    let imageName: String
-    let buttonTitle: String
-    let buttonColor: Color
-    let action: () -> Void
 
-    private let cardWidth: CGFloat = 175
-    private let cardHeight: CGFloat = 220
-    private let buttonHeight: CGFloat = 42
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 0) {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: cardWidth, height: cardHeight - buttonHeight)
-                    .clipped()
-
-                Text(buttonTitle)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: buttonHeight)
-                    .background(buttonColor)
-            }
-            .frame(width: cardWidth, height: cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
-        }
-        .buttonStyle(.plain)
-    }
-}
 
 // MARK: - Color Hex Initialiser
 extension Color {
