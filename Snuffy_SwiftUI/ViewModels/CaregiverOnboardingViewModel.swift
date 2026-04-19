@@ -38,6 +38,8 @@ class CaregiverOnboardingViewModel: ObservableObject {
     @Published var isLocationLoading = false
     @Published var locationStatus: String = ""
     @Published var hasLocationPermission = false
+    @Published var detectedLatitude: Double?
+    @Published var detectedLongitude: Double?
     private let locationManager = LocationManager.shared
 
     private let db = Firestore.firestore()
@@ -52,17 +54,40 @@ class CaregiverOnboardingViewModel: ObservableObject {
         }
     }
 
+    /// Actively fetch the user's coordinates (GPS or geocoded from address)
+    func detectLocation() {
+        isLocationLoading = true
+        locationStatus = "Detecting your location..."
+
+        locationManager.getLocationForOnboarding(address: address) { [weak self] latitude, longitude in
+            DispatchQueue.main.async {
+                self?.isLocationLoading = false
+                if latitude != 0.0 || longitude != 0.0 {
+                    self?.detectedLatitude = latitude
+                    self?.detectedLongitude = longitude
+                    self?.hasLocationPermission = true
+                    self?.locationStatus = String(
+                        format: "Location detected: %.4f, %.4f",
+                        latitude, longitude
+                    )
+                } else {
+                    self?.locationStatus = "Could not detect location. Enter a detailed address."
+                }
+            }
+        }
+    }
+
     private func updateLocationStatus() {
         switch locationManager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             hasLocationPermission = true
-            locationStatus = "Location access granted"
+            locationStatus = "Location access granted. Tap detect to fetch coordinates."
         case .denied, .restricted:
             hasLocationPermission = false
-            locationStatus = "Location denied - will use address"
+            locationStatus = "Location denied — will geocode from your address"
         case .notDetermined:
             hasLocationPermission = false
-            locationStatus = "Requesting location..."
+            locationStatus = "Tap to allow location access"
         @unknown default:
             hasLocationPermission = false
             locationStatus = ""
@@ -305,6 +330,14 @@ class CaregiverOnboardingViewModel: ObservableObject {
                     break
                 }
             }
+        }
+    }
+    // MARK: - Logout
+    func logout() {
+        do {
+            try Auth.auth().signOut()
+        } catch {
+            print("[CaregiverOnboarding] ❌ Logout failed: \(error.localizedDescription)")
         }
     }
 }
