@@ -879,28 +879,7 @@ class FirebaseManager {
     }
     
     // MARK: - Vaccination Functions
-    
-//    func saveVaccinationData(petId: String, vaccination: VaccinationDetails, completion: @escaping (Error?) -> Void) {
-//        let data: [String: Any] = [
-//            "vaccineName": vaccination.vaccineName,
-//            "vaccineType": vaccination.vaccineType,
-//            "dateOfVaccination": vaccination.dateOfVaccination,
-//            "expiryDate": vaccination.expiryDate,
-//            "nextDueDate": vaccination.nextDueDate
-//        ]
-//
-//        print("Saving vaccination data to Firestore...")
-//        db.collection("Pets").document(petId).collection("Vaccinations").addDocument(data: data) { error in
-//            if let error = error {
-//                print("Error saving vaccination: \(error.localizedDescription)")
-//                completion(error)
-//            } else {
-//                print("Vaccination saved successfully!")
-//                completion(nil)
-//            }
-//        }
-//    }
-//
+
     func saveVaccinationData(petId: String, vaccination: VaccinationDetails, completion: @escaping (Error?) -> Void) {
         let data: [String: Any] = [
             "vaccineName": vaccination.vaccineName,

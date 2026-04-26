@@ -2,7 +2,7 @@
 //  CaregiverOnboardingViewModel.swift
 //  Snuffy_SwiftUI
 //
-//  Authored by bhumika sharam
+//  Created by Bhumika Sharma on 30/03/26.
 //
 
 import SwiftUI
@@ -19,7 +19,7 @@ class CaregiverOnboardingViewModel: ObservableObject {
     @Published var address: String = ""
     @Published var bio: String = ""
     @Published var phoneNumber: String = ""
-    @Published var experience: String = ""          // caretaker only
+    @Published var experience: String = ""
     @Published var petsHandled: String = ""
     @Published var certification: String = ""
     @Published var lor: String = ""
@@ -54,7 +54,6 @@ class CaregiverOnboardingViewModel: ObservableObject {
         }
     }
 
-    /// Actively fetch the user's coordinates (GPS or geocoded from address)
     func detectLocation() {
         isLocationLoading = true
         locationStatus = "Detecting your location..."
@@ -150,9 +149,8 @@ class CaregiverOnboardingViewModel: ObservableObject {
                     "lor": lorValue,
                     "galleryImages": galleryImages,
                     "isProfileComplete": true,
-                    // Add location data for caretaker/dogwalker matching
                     "location": [latitude, longitude],
-                    "distanceAway": 0.0  // Will be calculated dynamically when matching
+                    "distanceAway": 0.0
                 ]
 
                 if !profilePic.isEmpty {

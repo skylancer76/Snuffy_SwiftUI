@@ -2,7 +2,7 @@
 //  WaitingListView.swift
 //  Snuffy_SwiftUI
 //
-//  Authored by bhumika sharam
+//  Created by Bhumika Sharma on 21/01/26.
 //
 
 import SwiftUI

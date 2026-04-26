@@ -2,16 +2,13 @@
 //  UserRoleViewModel.swift
 //  Snuffy_SwiftUI
 //
-//  Authored by bhumika sharam
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import Foundation
 import Combine
 import FirebaseAuth
 import FirebaseFirestore
-
-// NOTE: UserRole enum is defined in UserSignUpViewModel.swift
-// (.petOwner = 0, .caretaker = 1, .dogWalker = 2)
 
 class UserRoleViewModel: ObservableObject {
     @Published var role: UserRole = .petOwner
@@ -86,7 +83,6 @@ class UserRoleViewModel: ObservableObject {
         }
     }
 
-    /// Refresh function for manual triggers (listeners handle real-time already)
     func refresh() {
         // Just let the active snapshot listeners do their job
     }

@@ -9,9 +9,6 @@ import SwiftUI
 import CoreLocation
 import Combine
 
-/// Shared location utility for onboarding and profile flows.
-/// Wraps CLLocationManager for permission handling, GPS lookup,
-/// and address-to-coordinate geocoding.
 final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     static let shared = LocationManager()
@@ -31,15 +28,13 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     // MARK: - Permission
+    
     func requestLocationPermission() {
         clManager.requestWhenInUseAuthorization()
     }
 
     // MARK: - Get Location for Onboarding
-    /// Attempts to get the user's GPS location first. If location services
-    /// are unavailable or denied, falls back to geocoding the provided address.
-    /// Always calls `completion` exactly once with (latitude, longitude).
-    /// Falls back to (0.0, 0.0) if everything fails.
+    
     func getLocationForOnboarding(address: String, completion: @escaping (Double, Double) -> Void) {
         let status = clManager.authorizationStatus
 

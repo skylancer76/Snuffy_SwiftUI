@@ -4,17 +4,7 @@
 //
 //  Authored by bhumika sharam
 //
-//  Sends a rich HTML email directly to the admin via SendGrid API.
-//  When admin clicks "Approve", it calls a Firebase Cloud Function that
-//  flips isVerified = true in Firestore — no manual step needed.
-//
-//  SETUP:
-//  1. Sign up at sendgrid.com (free tier: 100 emails/day).
-//  2. Create an API key and replace SENDGRID_API_KEY below.
-//  3. Verify your sender email (snuffy.noreply@gmail.com or any address you own).
-//  4. Deploy the Cloud Function in /functions/index.js (provided separately).
-//  5. Replace FIREBASE_PROJECT_ID below with your Firebase project ID.
-//
+
 
 import Foundation
 import FirebaseFirestore
@@ -24,14 +14,12 @@ struct AdminNotificationService {
 
     static let shared = AdminNotificationService()
 
-    // ─── CONFIG ────────────────────────────────────────────────────────────────
-    private let sendGridAPIKey  =  "" // ← replace
-    private let senderEmail     =  ""    // ← must be verified in SendGrid
-    private let senderName      = "" //
+    private let sendGridAPIKey  =  ""
+    private let senderEmail     =  ""
+    private let senderName      = ""
     private let adminEmail      = ""
     private let firebaseProjectID = ""
-    // ───────────────────────────────────────────────────────────────────────────
-
+   
     private let db = Firestore.firestore()
 
     // MARK: - Send Caretaker Approval Email
@@ -64,11 +52,9 @@ struct AdminNotificationService {
             approvalURL: approvalURL
         )
 
-        // 1. Write to Firestore (audit trail)
         saveNotificationToFirestore(token: token, uid: uid, role: "caretaker",
                                     name: name, email: email)
 
-        // 2. Fire the actual email via SendGrid
         print("[AdminNotificationService] 📨 About to call sendEmail for caretaker...")
         sendEmail(
             to: adminEmail,

@@ -2,9 +2,7 @@
 //  CaretakerBookingsInfoView.swift
 //  Snuffy_SwiftUI
 //
-//  PET OWNER POV — what the pet owner sees when they tap a booking.
-//  Shows: Caretaker profile card (with call/message), booking dates/times/status/location,
-//  Track Pet, and Payment Details.
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI
