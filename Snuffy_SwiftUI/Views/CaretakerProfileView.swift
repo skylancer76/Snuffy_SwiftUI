@@ -2,10 +2,7 @@
 //  CaretakerProfileView.swift
 //  Snuffy_SwiftUI
 //
-//  Matches the design from snuffy-main's Caretaker Profile.swift
-//  Screenshot: circular image → bold name → gray address →
-//              horizontal stat card (Rating | Distance | Pets Sitted) →
-//              About the Caretaker section → Gallery grid
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI
@@ -179,8 +176,6 @@ struct CaretakerProfileView: View {
             .padding(.top, 120)
     }
 
-    // (Old profile content functions removed manually, logic is directly in the body ViewBuilder now)
-
     // MARK: - Profile Image
     private func profileImageView() -> some View {
         Group {
@@ -217,7 +212,6 @@ struct CaretakerProfileView: View {
                 label: "Distance"
             )
 
-            // Experience (Mocked for now as we don't have this field yet)
             statItem(
                 value: "4+",
                 label: "Years of Experience"
@@ -248,8 +242,6 @@ struct CaretakerProfileView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // Removed divider line
-
     // MARK: - About Section
     private func aboutSection(title: String, bio: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -277,7 +269,7 @@ struct CaretakerProfileView: View {
                 HStack(spacing: 12) {
                     ForEach(urls, id: \.self) { url in
                         ProfileGalleryCell(url: url)
-                            .frame(width: 280) // Increased width for horizontal scrolling
+                            .frame(width: 280)
                     }
                 }
             }
@@ -287,6 +279,16 @@ struct CaretakerProfileView: View {
 }
 
 // MARK: - Custom Views
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
+}
 
 struct ShareSheet: UIViewControllerRepresentable {
     var items: [Any]

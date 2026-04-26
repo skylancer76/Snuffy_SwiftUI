@@ -2,13 +2,13 @@
 //  CaregiverOnboardingView.swift
 //  Snuffy_SwiftUI
 //
-//  Authored by bhumika sharam
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI
 import PhotosUI
 
-struct CaregiverOnboardingView: View {
+struct CaretakerOnboardingView: View {
 
     let role: UserRole
     @ObservedObject var roleVM: UserRoleViewModel
@@ -553,6 +553,6 @@ struct GlassPhotoSlot: View {
 
 #Preview {
     NavigationStack {
-        CaregiverOnboardingView(role: .caretaker, roleVM: UserRoleViewModel())
+        CaretakerOnboardingView(role: .caretaker, roleVM: UserRoleViewModel())
     }
 }

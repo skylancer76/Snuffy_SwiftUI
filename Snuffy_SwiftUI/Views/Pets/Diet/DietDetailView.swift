@@ -2,7 +2,7 @@
 //  DietDetailView.swift
 //  Snuffy_SwiftUI
 //
-//  Created by Antigravity on 21/01/26.
+//  Created by Bhumika Sharma on 21/01/26.
 //
 
 import SwiftUI

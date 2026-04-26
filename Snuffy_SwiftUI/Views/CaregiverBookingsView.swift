@@ -2,7 +2,7 @@
 //  CaregiverBookingsView.swift
 //  Snuffy_SwiftUI
 //
-//  Mirrors Caretaker Bookings.swift from snuffy-main
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI

@@ -1,20 +1,20 @@
 //
-//  PetDietListView.swift
+//  PetVaccinationListView.swift
 //  Snuffy_SwiftUI
 //
-//  Created by Antigravity on 19/01/26.
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI
 
-struct PetDietListView: View {
+struct PetVaccinationListView: View {
     let petId: String
-    @StateObject private var viewModel: PetDietViewModel
+    @StateObject private var viewModel: PetVaccinationViewModel
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     init(petId: String) {
         self.petId = petId
-        _viewModel = StateObject(wrappedValue: PetDietViewModel(petId: petId))
+        _viewModel = StateObject(wrappedValue: PetVaccinationViewModel(petId: petId))
     }
     
     var body: some View {
@@ -26,22 +26,22 @@ struct PetDietListView: View {
             )
             .ignoresSafeArea()
             
-            if viewModel.isLoading && viewModel.diets.isEmpty {
+            if viewModel.isLoading && viewModel.vaccinations.isEmpty {
                 ProgressView()
                     .tint(snuffyPink)
-            } else if viewModel.diets.isEmpty {
+            } else if viewModel.vaccinations.isEmpty {
                 VStack {
                     HStack(spacing: 20) {
                         ZStack {
                             Circle()
                                 .fill(snuffyPink)
                                 .frame(width: 44, height: 44)
-                            Image(systemName: "fork.knife")
+                            Image(systemName: "syringe.fill")
                                 .foregroundColor(.white)
                                 .font(.system(size: 20))
                         }
                         
-                        Text("No diet details found")
+                        Text("No vaccination found")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.black)
                         
@@ -59,9 +59,9 @@ struct PetDietListView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 16) {
-                        ForEach(viewModel.diets, id: \.dietId) { diet in
-                            NavigationLink(destination: DietDetailView(diet: diet)) {
-                                DietRow(diet: diet)
+                        ForEach(viewModel.vaccinations, id: \.vaccineId) { vaccination in
+                            NavigationLink(destination: VaccinationDetailView(vaccination: vaccination)) {
+                                VaccinationRow(vaccination: vaccination)
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
@@ -70,12 +70,12 @@ struct PetDietListView: View {
                 }
             }
         }
-        .navigationTitle("Diet Details")
+        .navigationTitle("Vaccination Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    viewModel.shouldShowAddDiet = true
+                    viewModel.shouldShowAddVaccine = true
                 }) {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .bold))
@@ -83,14 +83,14 @@ struct PetDietListView: View {
                 }
             }
         }
-        .sheet(isPresented: $viewModel.shouldShowAddDiet) {
-            AddPetDietView(petId: petId)
+        .sheet(isPresented: $viewModel.shouldShowAddVaccine) {
+            AddPetVaccinationView(petId: petId)
         }
     }
 }
 
-struct DietRow: View {
-    let diet: PetDietDetails
+struct VaccinationRow: View {
+    let vaccination: VaccinationDetails
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
@@ -99,30 +99,22 @@ struct DietRow: View {
                 Circle()
                     .fill(snuffyPink.opacity(0.1))
                     .frame(width: 50, height: 50)
-                Image(systemName: "fork.knife")
+                Image(systemName: "syringe.fill")
                     .foregroundColor(snuffyPink)
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(diet.foodName)
+                Text(vaccination.vaccineName)
                     .font(.headline)
-                HStack {
-                    Text(diet.mealType)
-                        .font(.subheadline)
-                        .foregroundColor(snuffyPink)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(snuffyPink.opacity(0.1))
-                        .cornerRadius(4)
-                    
-                    Text("at \(diet.servingTime)")
-                        .font(.subheadline)
+                Text("Given on \(vaccination.dateOfVaccination)")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                
+                if vaccination.expires, let expiry = vaccination.expiryDate {
+                    Text("Expires on \(expiry)")
+                        .font(.caption)
                         .foregroundColor(.gray)
                 }
-                
-                Text("\(diet.portionSize) (\(diet.feedingFrequency))")
-                    .font(.caption)
-                    .foregroundColor(.gray)
             }
             
             Spacer()
@@ -136,6 +128,6 @@ struct DietRow: View {
 
 #Preview {
     NavigationStack {
-        PetDietListView(petId: "sample")
+        PetVaccinationListView(petId: "sample")
     }
 }

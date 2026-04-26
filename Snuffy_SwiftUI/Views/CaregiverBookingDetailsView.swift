@@ -2,9 +2,7 @@
 //  CaregiverBookingDetailsView.swift
 //  Snuffy_SwiftUI
 //
-//  CAREGIVER POV — what a caretaker or dog walker sees when they tap a booking.
-//  Shows: Pet Parent (owner name), Pet Name, dates, times, status, pickup location,
-//  and a tappable Pet Details row that opens the read-only CaregiverPetProfileView.
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI

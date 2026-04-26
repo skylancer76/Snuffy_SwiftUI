@@ -2,8 +2,7 @@
 //  DogWalkerBookingsInfoView.swift
 //  Snuffy_SwiftUI
 //
-//  Caregiver (Dog Walker) POV — mirrors Caretaker Bookings Information from snuffy-main.
-//  Shows booking details from the dog walker's point of view, plus a tappable Pet Details row.
+//  Created by Bhumika Sharma on 21/01/26.
 //
 
 import SwiftUI

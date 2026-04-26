@@ -2,10 +2,7 @@
 //  DogWalkerProfileView.swift
 //  Snuffy_SwiftUI
 //
-//  Matches the same design as CaretakerProfileView:
-//  circular image → bold name → gray address →
-//  horizontal stat card (Rating | Distance | Walks Completed) →
-//  About the DogWalker section → Gallery grid
+//  Created by Bhumika Sharma on 21/01/26.
 //
 
 import SwiftUI

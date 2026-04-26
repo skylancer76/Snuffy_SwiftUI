@@ -2,8 +2,7 @@
 //  CaregiverPetProfileView.swift
 //  Snuffy_SwiftUI
 //
-//  Read-only pet profile for caregivers (caretakers & dog walkers).
-//  Each row navigates to a read-only detail screen — no add/edit/delete controls.
+//  Created by Bhumika Sharma on 19/01/26.
 //
 
 import SwiftUI
@@ -457,5 +456,31 @@ private func caregiverEmptyState(icon: String, label: String, pink: Color) -> so
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
         .padding(.horizontal, 16).padding(.top, 20)
         Spacer()
+    }
+}
+
+struct ProfileOptionRow: View {
+    let title: String
+    let icon: String
+    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(snuffyPink)
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon)
+                    .foregroundColor(.white)
+            }
+            
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.black)
+            
+            Spacer()
+        }
+        .padding(16)
+        .contentShape(Rectangle())
     }
 }
