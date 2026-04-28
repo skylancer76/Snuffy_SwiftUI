@@ -161,6 +161,7 @@ struct CommunityEvent: Identifiable, Codable {
     var imageURL: String?
     var contactInfo: String?
     var userId: String
+    var userName: String?
     var timestamp: Date
 
     init(
@@ -172,6 +173,7 @@ struct CommunityEvent: Identifiable, Codable {
         imageURL: String? = nil,
         contactInfo: String? = nil,
         userId: String,
+        userName: String? = nil,
         timestamp: Date = Date()
     ) {
         self.id          = id
@@ -182,6 +184,7 @@ struct CommunityEvent: Identifiable, Codable {
         self.imageURL    = imageURL
         self.contactInfo = contactInfo
         self.userId      = userId
+        self.userName    = userName
         self.timestamp   = timestamp
     }
 
@@ -203,6 +206,7 @@ struct CommunityEvent: Identifiable, Codable {
         self.imageURL    = data["imageURL"]    as? String
         self.contactInfo = data["contactInfo"] as? String
         self.userId      = userId
+        self.userName    = data["userName"]    as? String
         self.timestamp   = ts.dateValue()
     }
 
@@ -218,54 +222,8 @@ struct CommunityEvent: Identifiable, Codable {
         ]
         if let url  = imageURL    { dict["imageURL"]    = url  }
         if let info = contactInfo { dict["contactInfo"] = info }
+        if let name = userName    { dict["userName"]    = name }
         return dict
     }
 }
 
-// MARK: - Community Announcement
-struct CommunityAnnouncement: Identifiable, Codable {
-    var id: String
-    var text: String
-    var userId: String
-    var userName: String
-    var timestamp: Date
-
-    init(
-        id: String = UUID().uuidString,
-        text: String,
-        userId: String,
-        userName: String,
-        timestamp: Date = Date()
-    ) {
-        self.id        = id
-        self.text      = text
-        self.userId    = userId
-        self.userName  = userName
-        self.timestamp = timestamp
-    }
-
-    init?(from data: [String: Any], id: String) {
-        guard
-            let text     = data["text"]      as? String,
-            let userId   = data["userId"]    as? String,
-            let userName = data["userName"]  as? String,
-            let ts       = data["timestamp"] as? Timestamp
-        else { return nil }
-
-        self.id        = id
-        self.text      = text
-        self.userId    = userId
-        self.userName  = userName
-        self.timestamp = ts.dateValue()
-    }
-
-    func toDictionary() -> [String: Any] {
-        return [
-            "id":        id,
-            "text":      text,
-            "userId":    userId,
-            "userName":  userName,
-            "timestamp": Timestamp(date: timestamp)
-        ]
-    }
-}
