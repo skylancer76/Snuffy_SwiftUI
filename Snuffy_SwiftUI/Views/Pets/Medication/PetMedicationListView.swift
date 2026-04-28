@@ -30,30 +30,24 @@ struct PetMedicationListView: View {
                 ProgressView()
                     .tint(snuffyPink)
             } else if viewModel.medications.isEmpty {
-                VStack {
-                    HStack(spacing: 20) {
-                        ZStack {
-                            Circle()
-                                .fill(snuffyPink)
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "pills.fill")
-                                .foregroundColor(.white)
-                                .font(.system(size: 20))
-                        }
-                        
-                        Text("No medication found")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.black)
-                        
-                        Spacer()
+                VStack(spacing: 16) {
+                    Spacer()
+                    ZStack {
+                        Circle()
+                            .fill(snuffyPink.opacity(0.15))
+                            .frame(width: 110, height: 110)
+                        Image(systemName: "pills.fill")
+                            .font(.system(size: 46))
+                            .foregroundColor(snuffyPink)
                     }
-                    .padding(20)
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
-                    
+                    Text("No medications yet")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("Nothing prescribed yet.\nAdd a medication to track your pet's treatment.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
                     Spacer()
                 }
             } else {

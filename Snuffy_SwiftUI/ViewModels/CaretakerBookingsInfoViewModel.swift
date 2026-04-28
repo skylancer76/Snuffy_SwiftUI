@@ -11,13 +11,13 @@ import Combine
 
 class CaretakerBookingsInfoViewModel: ObservableObject {
     @Published var caretaker: Caretakers?
+    @Published var caretakerDocumentId: String?   // actual Firestore document ID
     @Published var isLoading = true
-    
+
     private let db = Firestore.firestore()
-    
+
     func fetchCaretakerDetails(caretakerId: String) {
         guard !caretakerId.isEmpty else {
-            print("Caretaker ID is empty. Skipping fetch.")
             isLoading = false
             return
         }
@@ -35,6 +35,8 @@ class CaretakerBookingsInfoViewModel: ObservableObject {
                         print("No caretaker found for ID: \(caretakerId)")
                         return
                     }
+                    // Store the real document ID so ratings land on the correct document
+                    self?.caretakerDocumentId = doc.documentID
                     let data = doc.data()
                     do {
                         let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
