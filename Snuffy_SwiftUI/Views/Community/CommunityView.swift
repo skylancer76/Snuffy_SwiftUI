@@ -17,8 +17,20 @@ struct CommunityView: View {
     @State private var selectedTag: String? = nil
 
     var filteredEvents: [CommunityEvent] {
-        guard let tag = selectedTag else { return viewModel.events }
-        return viewModel.events.filter { $0.tag == tag }
+        if let tag = selectedTag {
+            return viewModel.events.filter { $0.tag == tag }
+        }
+        if !searchText.isEmpty {
+            let q = searchText.lowercased()
+            return viewModel.events.filter {
+                $0.tag.lowercased().contains(q) || $0.title.lowercased().contains(q)
+            }
+        }
+        return viewModel.events
+    }
+
+    var availableTags: [String] {
+        Array(Set(viewModel.events.map { $0.tag })).sorted()
     }
 
     var body: some View {
@@ -63,13 +75,16 @@ struct CommunityView: View {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.gray)
                                 .font(.system(size: 14))
-                            TextField("Search events nearby", text: $searchText)
+                            TextField("Search events by name or label…", text: $searchText)
                                 .font(.system(size: 14))
-                                .onSubmit {
-                                    selectedTag = searchText.isEmpty ? nil : searchText
+                                .onChange(of: searchText) { _, text in
+                                    if !text.isEmpty { selectedTag = nil }
                                 }
-                            if !searchText.isEmpty {
-                                Button { searchText = ""; selectedTag = nil } label: {
+                            if !searchText.isEmpty || selectedTag != nil {
+                                Button {
+                                    searchText = ""
+                                    selectedTag = nil
+                                } label: {
                                     Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
                                 }
                             }
@@ -81,23 +96,58 @@ struct CommunityView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 22)
 
-                        // MARK: - Events Nearby (Redesigned)
+                        // MARK: - Events
                         if !viewModel.events.isEmpty {
                             sectionHeader("Events")
-                            
+
+                            // Tag filter pills
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    ForEach(filteredEvents) { event in
-                                        NavigationLink(destination: CommunityEventDetailView(event: event)) {
-                                            EventCard(event: event, snuffyPink: snuffyPink)
+                                HStack(spacing: 8) {
+                                    tagPill("All", isSelected: selectedTag == nil && searchText.isEmpty) {
+                                        selectedTag = nil
+                                        searchText  = ""
+                                    }
+                                    ForEach(availableTags, id: \.self) { tag in
+                                        tagPill(tag, isSelected: selectedTag == tag) {
+                                            selectedTag = tag
+                                            searchText  = ""
                                         }
-                                        .buttonStyle(.plain)
                                     }
                                 }
                                 .padding(.horizontal, 20)
-                                .padding(.vertical, 24)
+                                .padding(.bottom, 4)
                             }
-                            .padding(.bottom, 8)
+
+                            if filteredEvents.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "calendar.badge.exclamationmark")
+                                            .font(.system(size: 36))
+                                            .foregroundColor(snuffyPink.opacity(0.5))
+                                        Text("No events for this filter")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(.vertical, 30)
+                                    Spacer()
+                                }
+                            } else {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        ForEach(filteredEvents) { event in
+                                            NavigationLink(destination: CommunityEventDetailView(event: event)) {
+                                                EventCard(event: event, snuffyPink: snuffyPink)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 20)
+                                }
+                            }
+
+                            Spacer().frame(height: 8)
                         }
 
                         // MARK: - Posts Feed (Trending)
@@ -137,9 +187,6 @@ struct CommunityView: View {
             .sheet(isPresented: $viewModel.showCreateEvent) {
                 CreateEventView(viewModel: createVM)
             }
-            .sheet(isPresented: $viewModel.showAddAnnouncement) {
-                AddAnnouncementView(viewModel: createVM)
-            }
             .sheet(item: $selectedPostForComments) { post in
                 CommunityCommentsView(post: post)
             }
@@ -163,30 +210,20 @@ struct CommunityView: View {
             .padding(.bottom, 16)
     }
 
-    // MARK: - Tag Filter Pills
-    private var eventTagPills: some View {
-        let allTags = Array(Set(viewModel.events.map { $0.tag })).sorted()
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                tagPill("All", isSelected: selectedTag == nil) { selectedTag = nil }
-                ForEach(allTags, id: \.self) { tag in
-                    tagPill(tag, isSelected: selectedTag == tag) { selectedTag = tag }
-                }
-            }
-        }
-    }
+    // MARK: - Tag Pill
 
     private func tagPill(_ tag: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(tag)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(isSelected ? .white : snuffyPink)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
                 .background(isSelected ? snuffyPink : snuffyPink.opacity(0.1))
-                .cornerRadius(14)
+                .cornerRadius(20)
         }
         .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
 
     // MARK: - Empty Feed

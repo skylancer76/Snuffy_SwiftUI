@@ -32,9 +32,6 @@ class CreatePostViewModel: ObservableObject {
     @Published var eventContactInfo: String = ""
     @Published var eventImage: UIImage?
 
-    // Announcement field
-    @Published var announcementText: String = ""
-
     let availableEventTags = ["Dog Show", "Health", "Run", "Training", "Adoption", "General"]
 
     // MARK: - Private
@@ -136,24 +133,31 @@ class CreatePostViewModel: ObservableObject {
 
         isUploading = true
         let eventId = UUID().uuidString
+        let userId = user.uid
 
-        if let image = eventImage {
-            uploadImage(image, path: "community/events/\(eventId)/banner.jpg") { [weak self] result in
-                guard let self else { return }
-                switch result {
-                case .success(let url):
-                    self.saveEvent(eventId: eventId, userId: user.uid, imageURL: url)
-                case .failure(let err):
-                    self.errorMessage = err.localizedDescription
-                    self.isUploading = false
+        db.collection("users").document(userId).getDocument { [weak self] snapshot, _ in
+            guard let self else { return }
+            let fetchedName = snapshot?.data()?["name"] as? String
+            let organizerName = fetchedName ?? user.displayName ?? "Organizer"
+
+            if let image = self.eventImage {
+                self.uploadImage(image, path: "community/events/\(eventId)/banner.jpg") { [weak self] result in
+                    guard let self else { return }
+                    switch result {
+                    case .success(let url):
+                        self.saveEvent(eventId: eventId, userId: userId, organizerName: organizerName, imageURL: url)
+                    case .failure(let err):
+                        self.errorMessage = err.localizedDescription
+                        self.isUploading = false
+                    }
                 }
+            } else {
+                self.saveEvent(eventId: eventId, userId: userId, organizerName: organizerName, imageURL: nil)
             }
-        } else {
-            saveEvent(eventId: eventId, userId: user.uid, imageURL: nil)
         }
     }
 
-    private func saveEvent(eventId: String, userId: String, imageURL: String?) {
+    private func saveEvent(eventId: String, userId: String, organizerName: String, imageURL: String?) {
         let event = CommunityEvent(
             id: eventId,
             title: eventTitle,
@@ -162,50 +166,14 @@ class CreatePostViewModel: ObservableObject {
             eventDate: eventDate,
             imageURL: imageURL,
             contactInfo: eventContactInfo.isEmpty ? nil : eventContactInfo,
-            userId: userId
+            userId: userId,
+            userName: organizerName
         )
         db.collection("communityEvents").document(eventId).setData(event.toDictionary()) { [weak self] error in
             guard let self else { return }
             self.isUploading = false
             if let error { self.errorMessage = error.localizedDescription }
             else { self.didPost = true }
-        }
-    }
-
-    // MARK: - Add Announcement
-
-    func addAnnouncement() {
-        guard let user = Auth.auth().currentUser else {
-            errorMessage = "You must be logged in."
-            return
-        }
-        let text = announcementText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else {
-            errorMessage = "Please enter announcement text."
-            return
-        }
-
-        isUploading = true
-        let annId = UUID().uuidString
-        let userId = user.uid
-
-        db.collection("users").document(userId).getDocument { [weak self] snapshot, error in
-            guard let self = self else { return }
-            let fetchedName = snapshot?.data()?["name"] as? String
-            let finalUserName = fetchedName ?? user.displayName ?? "User Name"
-
-            let ann = CommunityAnnouncement(
-                id: annId,
-                text: text,
-                userId: userId,
-                userName: finalUserName
-            )
-            self.db.collection("communityAnnouncements").document(annId).setData(ann.toDictionary()) { [weak self] error in
-                guard let self else { return }
-                self.isUploading = false
-                if let error { self.errorMessage = error.localizedDescription }
-                else { self.didPost = true }
-            }
         }
     }
 
@@ -262,7 +230,6 @@ class CreatePostViewModel: ObservableObject {
         eventDate = Date()
         eventContactInfo = ""
         eventImage = nil
-        announcementText = ""
         errorMessage = nil
         didPost = false
         isUploading = false
