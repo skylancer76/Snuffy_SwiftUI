@@ -52,23 +52,9 @@ struct CreatePostMenuSheet: View {
                 }
             }
 
-            Divider().padding(.horizontal, 20)
-
-            menuItem(
-                icon: "megaphone.fill",
-                color: Color(red: 1.0, green: 0.6, blue: 0.2),
-                title: "Add Announcement",
-                subtitle: "Post a community notice"
-            ) {
-                dismiss()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    viewModel.showAddAnnouncement = true
-                }
-            }
-
             Spacer(minLength: 20)
         }
-        .presentationDetents([.height(320)])
+        .presentationDetents([.height(230)])
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(24)
     }

@@ -15,19 +15,16 @@ class CommunityViewModel: ObservableObject {
 
     // MARK: - Published State
     @Published var posts: [CommunityPost] = []
-    @Published var announcements: [CommunityAnnouncement] = []
     @Published var events: [CommunityEvent] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showCreateMenu = false
     @Published var showCreatePost = false
     @Published var showCreateEvent = false
-    @Published var showAddAnnouncement = false
     @Published var selectedPostForComments: CommunityPost?
 
     // MARK: - Private
     private var postsListener: ListenerRegistration?
-    private var announcementsListener: ListenerRegistration?
     private var eventsListener: ListenerRegistration?
     private let db = Firestore.firestore()
 
@@ -38,7 +35,6 @@ class CommunityViewModel: ObservableObject {
 
     deinit {
         postsListener?.remove()
-        announcementsListener?.remove()
         eventsListener?.remove()
     }
 
@@ -47,7 +43,6 @@ class CommunityViewModel: ObservableObject {
     func startListeners() {
         isLoading = true
         fetchPosts()
-        fetchAnnouncements()
         fetchEvents()
     }
 
@@ -62,12 +57,11 @@ class CommunityViewModel: ObservableObject {
                 let docs = snapshot?.documents ?? []
                 let currentUserId = Auth.auth().currentUser?.uid ?? ""
 
-                // Parse without async / actor isolation issues
                 var parsed: [CommunityPost] = docs.compactMap { doc in
                     CommunityPost(from: doc.data(), id: doc.documentID)
                 }
 
-        let group = DispatchGroup()
+                let group = DispatchGroup()
                 for i in parsed.indices {
                     let postId = parsed[i].id
                     group.enter()
@@ -85,19 +79,6 @@ class CommunityViewModel: ObservableObject {
                 group.notify(queue: .main) {
                     self.posts = parsed
                 }
-            }
-    }
-
-    private func fetchAnnouncements() {
-        announcementsListener = db.collection("communityAnnouncements")
-            .order(by: "timestamp", descending: true)
-            .limit(to: 10)
-            .addSnapshotListener { [weak self] snapshot, error in
-                guard let self else { return }
-                if let error { self.errorMessage = error.localizedDescription; return }
-                self.announcements = snapshot?.documents.compactMap {
-                    CommunityAnnouncement(from: $0.data(), id: $0.documentID)
-                } ?? []
             }
     }
 
@@ -119,12 +100,11 @@ class CommunityViewModel: ObservableObject {
     func toggleLike(post: CommunityPost) {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
 
-        let postRef    = db.collection("communityPosts").document(post.id)
-        let likeRef    = postRef.collection("likes").document(currentUserId)
-        let isLiked    = post.isLikedByCurrentUser
-        let delta      = isLiked ? -1 : 1
+        let postRef = db.collection("communityPosts").document(post.id)
+        let likeRef = postRef.collection("likes").document(currentUserId)
+        let isLiked = post.isLikedByCurrentUser
+        let delta   = isLiked ? -1 : 1
 
-        // Optimistic UI update
         if let idx = posts.firstIndex(where: { $0.id == post.id }) {
             posts[idx].isLikedByCurrentUser = !isLiked
             posts[idx].likesCount = max(0, posts[idx].likesCount + delta)

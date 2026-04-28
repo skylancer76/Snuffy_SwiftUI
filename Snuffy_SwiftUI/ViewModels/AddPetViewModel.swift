@@ -29,7 +29,6 @@ class AddPetViewModel: ObservableObject {
     
     let genders = ["Male", "Female"]
     let breeds = ["Labrador", "German Shepherd", "Golden Retriever", "Poodle", "Bulldog", "Rottweiler", "Other"]
-    let ages = (1...20).map { "\($0) \($0 == 1 ? "Year" : "Years")" }
     
     init() {}
     

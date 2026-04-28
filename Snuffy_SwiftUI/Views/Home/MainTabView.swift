@@ -30,7 +30,7 @@ struct MainTabView: View {
                         if !roleVM.isProfileComplete {
                             // Step 1 — New caregiver: collect profile details
                             NavigationStack {
-                                CaregiverOnboardingView(role: roleVM.role, roleVM: roleVM)
+                                CaretakerOnboardingView(role: roleVM.role, roleVM: roleVM)
                             }
                         } else if !roleVM.isVerified {
                             // Step 2 — Profile submitted: wait for admin approval

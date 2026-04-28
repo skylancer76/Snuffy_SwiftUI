@@ -11,13 +11,27 @@ import MessageUI
 
 struct CaretakerBookingsInfoView: View {
     let booking: BookingItem
-    @StateObject private var viewModel = CaretakerBookingsInfoViewModel()
+    @StateObject private var viewModel: CaretakerBookingsInfoViewModel
+    @StateObject private var ratingVM:  RatingViewModel
     @Environment(\.dismiss) var dismiss
 
     @State private var showingMessageComposer = false
+    @State private var showRatingSheet        = false
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
-    private let bgColor = Color(red: 242/255, green: 242/255, blue: 247/255)
+    private let bgColor    = Color(red: 242/255, green: 242/255, blue: 247/255)
+
+    private var isCompleted: Bool { booking.dynamicStatus == .completed }
+
+    init(booking: BookingItem) {
+        self.booking = booking
+        _viewModel = StateObject(wrappedValue: CaretakerBookingsInfoViewModel())
+        _ratingVM  = StateObject(wrappedValue: RatingViewModel(
+            targetId:       booking.caretakerRequest?.caretakerId ?? "",
+            collectionName: "caretakers",
+            bookingId:      booking.id
+        ))
+    }
 
     var body: some View {
         ZStack {
@@ -26,15 +40,13 @@ struct CaretakerBookingsInfoView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
 
-                    // MARK: Header
-                    headerView
-                        .padding(.top, 10)
+                    headerView.padding(.top, 10)
 
                     if viewModel.isLoading {
                         HStack { Spacer(); ProgressView().padding(.top, 50); Spacer() }
                     } else {
 
-                        // MARK: Caretaker Information (pet owner sees who is looking after pet)
+                        // MARK: Caretaker Information
                         if let caretaker = viewModel.caretaker {
                             sectionTitle("Caretaker Information")
                             caretakerCard(caretaker)
@@ -45,12 +57,36 @@ struct CaretakerBookingsInfoView: View {
                         bookingDetailsCard
 
                         // MARK: Track Your Pet
-                        sectionTitle("Track Your Pet")
-                        trackPetCard
+                        if let caretaker = viewModel.caretaker,
+                           let lat = caretaker.latitude, let lon = caretaker.longitude,
+                           (lat != 0 || lon != 0) {
+                            sectionTitle("Track Your Pet")
+                            NavigationLink(destination: TrackPetMapView(
+                                walkerLatitude: lat,
+                                walkerLongitude: lon,
+                                walkerName: caretaker.name
+                            )) {
+                                trackPetRow
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
 
                         // MARK: Payment Details
                         sectionTitle("Caretaking Fees")
                         paymentDetailsCard
+
+                        // MARK: Rating (completed bookings only)
+                        if isCompleted, let caretaker = viewModel.caretaker {
+                            sectionTitle("Your Rating")
+                            if ratingVM.isChecking {
+                                HStack { Spacer(); ProgressView().tint(snuffyPink); Spacer() }
+                                    .padding(.vertical, 8)
+                            } else if ratingVM.hasRated {
+                                ratedCard
+                            } else {
+                                rateRow(name: caretaker.name)
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -65,6 +101,14 @@ struct CaretakerBookingsInfoView: View {
                 viewModel.isLoading = false
             }
         }
+        // Once the real document ID is resolved, update ratingVM and check existing rating
+        .onChange(of: viewModel.caretakerDocumentId) { _, docId in
+            guard let docId else { return }
+            ratingVM.setTargetDocumentId(docId)
+            if isCompleted {
+                Task { await ratingVM.checkExistingRating() }
+            }
+        }
         .sheet(isPresented: $showingMessageComposer) {
             if let phone = viewModel.caretaker?.phoneNumber, !phone.isEmpty,
                MFMessageComposeViewController.canSendText() {
@@ -74,9 +118,17 @@ struct CaretakerBookingsInfoView: View {
                 Text("Messaging not supported on this device.")
             }
         }
+        .sheet(isPresented: $showRatingSheet) {
+            if let caretaker = viewModel.caretaker {
+                RatingSheetView(targetName: caretaker.name, vm: ratingVM)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.hidden)
+            }
+        }
     }
 
     // MARK: – Header
+
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 16) {
             Button { dismiss() } label: {
@@ -103,7 +155,8 @@ struct CaretakerBookingsInfoView: View {
             .padding(.bottom, -4)
     }
 
-    // MARK: – Caretaker Card (pet owner sees caretaker's profile)
+    // MARK: – Caretaker Card
+
     private func caretakerCard(_ caretaker: Caretakers) -> some View {
         NavigationLink(destination: CaretakerProfileView(caretakerId: caretaker.caretakerId)) {
             HStack(spacing: 16) {
@@ -152,7 +205,8 @@ struct CaretakerBookingsInfoView: View {
         }
     }
 
-    // MARK: – Booking Details (pet name, dates, times, status, location)
+    // MARK: – Booking Details Card
+
     private var bookingDetailsCard: some View {
         VStack(spacing: 0) {
             let request = booking.caretakerRequest
@@ -168,7 +222,6 @@ struct CaretakerBookingsInfoView: View {
             Divider().padding(.leading, 44)
             detailRow(icon: "info.circle.fill", label: "Status",     value: booking.status.capitalized)
             Divider().padding(.leading, 44)
-            // Address
             HStack(alignment: .top, spacing: 16) {
                 Image(systemName: "map.fill")
                     .foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
@@ -198,33 +251,73 @@ struct CaretakerBookingsInfoView: View {
         .padding(.vertical, 16).padding(.horizontal, 16)
     }
 
-    // MARK: – Track Pet
-    private var trackPetCard: some View {
-        Button(action: { print("Track Pet tapped") }) {
-            HStack(spacing: 16) {
-                Image(systemName: "location.north.circle.fill").foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
-                Text("Track Pet").font(.system(size: 16)).foregroundColor(.black)
-                Spacer()
-            }
-            .padding(.vertical, 16).padding(.horizontal, 16)
-            .background(Color.white).cornerRadius(20)
+    // MARK: – Track Pet Row
+
+    private var trackPetRow: some View {
+        HStack(spacing: 16) {
+            Image(systemName: "location.north.circle.fill")
+                .foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
+            Text("Track Your Pet").font(.system(size: 16)).foregroundColor(.black)
+            Spacer()
+            Image(systemName: "chevron.right").foregroundColor(.gray).font(.system(size: 14))
         }
+        .padding(.vertical, 16).padding(.horizontal, 16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
 
     // MARK: – Payment Details
+
     private var paymentDetailsCard: some View {
-        Button(action: { print("Payment Details tapped") }) {
+        HStack(spacing: 16) {
+            Image(systemName: "indianrupeesign.circle.fill")
+                .foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
+            Text("Payment Details").font(.system(size: 16)).foregroundColor(.black)
+            Spacer()
+        }
+        .padding(.vertical, 16).padding(.horizontal, 16)
+        .background(Color.white).cornerRadius(20)
+    }
+
+    // MARK: – Rating Rows
+
+    private func rateRow(name: String) -> some View {
+        Button { showRatingSheet = true } label: {
             HStack(spacing: 16) {
-                Image(systemName: "indianrupeesign.circle.fill").foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
-                Text("Payment Details").font(.system(size: 16)).foregroundColor(.black)
+                Image(systemName: "star.fill")
+                    .foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
+                Text("Rate your caretaker")
+                    .font(.system(size: 16)).foregroundColor(.black)
                 Spacer()
+                Image(systemName: "chevron.right").foregroundColor(.gray).font(.system(size: 14))
             }
             .padding(.vertical, 16).padding(.horizontal, 16)
             .background(Color.white).cornerRadius(20)
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
         }
+        .buttonStyle(.plain)
+    }
+
+    private var ratedCard: some View {
+        HStack(spacing: 16) {
+            HStack(spacing: 4) {
+                ForEach(1...5, id: \.self) { star in
+                    Image(systemName: star <= ratingVM.existingStars ? "star.fill" : "star")
+                        .font(.system(size: 18))
+                        .foregroundColor(star <= ratingVM.existingStars ? .yellow : .gray.opacity(0.3))
+                }
+            }
+            Spacer()
+            Text("Rating submitted")
+                .font(.system(size: 13)).foregroundColor(.gray)
+        }
+        .padding(.vertical, 16).padding(.horizontal, 16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
 
     // MARK: – Helpers
+
     private func shortPickupAddress(for request: ScheduleCaretakerRequest) -> String {
         var parts: [String] = []
         if let v = request.buildingNo, !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
@@ -232,6 +325,7 @@ struct CaretakerBookingsInfoView: View {
         if let v = request.landmark,   !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
         return parts.joined(separator: ", ")
     }
+
     private func formatDate(_ date: Date) -> String {
         let f = DateFormatter(); f.dateStyle = .medium; return f.string(from: date)
     }
