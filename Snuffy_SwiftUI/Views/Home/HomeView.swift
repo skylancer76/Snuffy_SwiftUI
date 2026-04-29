@@ -18,6 +18,11 @@ struct HomeView: View {
 
     private let myPetsSectionID = "MY_PETS_SECTION"
 
+    // MARK: - Pet Bot state
+    @State private var showPetBot      = false
+    @State private var botDragOffset   = CGSize.zero
+    @State private var botLastOffset   = CGSize.zero
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -180,6 +185,17 @@ struct HomeView: View {
                         }
                     }
                 }
+                // MARK: - Floating Pet Bot Button
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        petBotButton
+                    }
+                }
+                .padding(.trailing, 16)
+                .padding(.bottom, 100)
+                .allowsHitTesting(true)
             }
             .navigationBarHidden(true)
             .onAppear {
@@ -201,6 +217,11 @@ struct HomeView: View {
             .sheet(isPresented: $viewModel.shouldNavigateToDogWalkerBooking) {
                 BookDogWalkerView()
             }
+            .sheet(isPresented: $showPetBot) {
+                PetBotView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.hidden)
+            }
             .fullScreenCover(isPresented: $viewModel.shouldNavigateToLogin) {
                 UserLoginView()
             }
@@ -215,6 +236,45 @@ struct HomeView: View {
             }
 
         }
+    }
+
+    // MARK: - Floating Pet Bot Button
+
+    private var petBotButton: some View {
+        Button { showPetBot = true } label: {
+            ZStack {
+                Circle()
+                    .fill(snuffyPink)
+                    .frame(width: 56, height: 56)
+                    .shadow(color: snuffyPink.opacity(0.45), radius: 10, x: 0, y: 5)
+
+                HStack(spacing: -4) {
+                    Image(systemName: "pawprint.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(-20))
+                        .offset(y: 3)
+                    Image(systemName: "pawprint.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(10))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .offset(botDragOffset)
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    botDragOffset = CGSize(
+                        width:  botLastOffset.width  + value.translation.width,
+                        height: botLastOffset.height + value.translation.height
+                    )
+                }
+                .onEnded { _ in
+                    botLastOffset = botDragOffset
+                }
+        )
     }
 
     // MARK: - Search Handler

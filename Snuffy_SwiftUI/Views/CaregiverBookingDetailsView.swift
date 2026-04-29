@@ -9,13 +9,22 @@ import SwiftUI
 
 struct CaregiverBookingDetailsView: View {
     let booking: BookingItem
+    @StateObject private var serviceVM: ServiceFlowViewModel
     @Environment(\.dismiss) var dismiss
+
+    @State private var showOTPSheet        = false
+    @State private var showEndServiceSheet = false
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     private let bgColor = Color(red: 242/255, green: 242/255, blue: 247/255)
 
     private var caretakerReq: ScheduleCaretakerRequest? { booking.caretakerRequest }
     private var dogWalkerReq: ScheduleDogWalkerRequest? { booking.dogWalkerRequest }
+
+    init(booking: BookingItem) {
+        self.booking = booking
+        _serviceVM = StateObject(wrappedValue: ServiceFlowViewModel(booking: booking))
+    }
 
     var body: some View {
         ZStack {
@@ -26,6 +35,9 @@ struct CaregiverBookingDetailsView: View {
 
                     // MARK: Header
                     headerView.padding(.top, 10)
+
+                    // MARK: Service Action (OTP entry / End Service)
+                    providerServiceSection
 
                     // MARK: Booking Details (caregiver POV)
                     sectionTitle("Booking Details")
@@ -47,6 +59,127 @@ struct CaregiverBookingDetailsView: View {
             }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showOTPSheet) {
+            OTPEntrySheet(vm: serviceVM)
+                .presentationDetents([.height(420)])
+                .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showEndServiceSheet) {
+            EndServiceSheet(vm: serviceVM)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.hidden)
+        }
+    }
+
+    // MARK: – Provider Service Section
+
+    @ViewBuilder
+    private var providerServiceSection: some View {
+        if serviceVM.providerWaitingForPin {
+            sectionTitle("Service")
+            waitingForPinCard
+        } else if serviceVM.providerCanEnterOTP {
+            sectionTitle("Service")
+            enterOTPCard
+        } else if serviceVM.firestoreStatus == "ongoing" && !serviceVM.providerCanEndService {
+            sectionTitle("Service")
+            serviceInProgressCard
+        } else if serviceVM.providerCanEndService {
+            sectionTitle("Service")
+            endServiceCard
+        }
+    }
+
+    private var waitingForPinCard: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle().fill(Color.orange.opacity(0.12)).frame(width: 40, height: 40)
+                Image(systemName: "clock.fill")
+                    .foregroundColor(.orange).font(.system(size: 18))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Waiting for PIN")
+                    .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
+                Text("Ask the pet owner to open their booking and generate a PIN")
+                    .font(.system(size: 12)).foregroundColor(.gray)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+    }
+
+    private var serviceInProgressCard: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle().fill(snuffyPink.opacity(0.12)).frame(width: 40, height: 40)
+                Image(systemName: "pawprint.fill")
+                    .foregroundColor(snuffyPink).font(.system(size: 18))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Service in Progress")
+                    .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
+                Text(booking.type == .dogWalker
+                     ? "End Service available after the scheduled walk time"
+                     : "Service is ongoing")
+                    .font(.system(size: 12)).foregroundColor(.gray)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+    }
+
+    private var enterOTPCard: some View {
+        Button { showOTPSheet = true } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle().fill(snuffyPink.opacity(0.12)).frame(width: 40, height: 40)
+                    Image(systemName: "lock.open.fill")
+                        .foregroundColor(snuffyPink).font(.system(size: 18))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Enter PIN to Start")
+                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
+                    Text("Ask the pet owner for their 4-digit PIN")
+                        .font(.system(size: 12)).foregroundColor(.gray)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundColor(.gray).font(.system(size: 14))
+            }
+            .padding(16)
+            .background(Color.white).cornerRadius(20)
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var endServiceCard: some View {
+        Button { showEndServiceSheet = true } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle().fill(Color.green.opacity(0.12)).frame(width: 40, height: 40)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green).font(.system(size: 22))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("End Service")
+                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
+                    Text(serviceVM.isEarlyEndForCaretaker
+                         ? "Ending before scheduled date — reason required"
+                         : "Mark service as completed")
+                        .font(.system(size: 12)).foregroundColor(.gray)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundColor(.gray).font(.system(size: 14))
+            }
+            .padding(16)
+            .background(Color.white).cornerRadius(20)
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: – Header
