@@ -34,28 +34,72 @@ class UserRoleViewModel: ObservableObject {
             return
         }
 
+        let email = Auth.auth().currentUser?.email ?? ""
         isLoading = true
 
-        // 1. Listen to Caretakers
-        let ctListener = db.collection("caretakers").document(uid)
+        // 1. Caretakers — query by email (covers legacy custom-ID docs like "C9")
+        //    then fall back to UID-keyed doc (covers new app-onboarded caretakers)
+        let ctEmailListener = db.collection("caretakers")
+            .whereField("email", isEqualTo: email)
             .addSnapshotListener { [weak self] snap, _ in
-                guard let self = self, let snap = snap, snap.exists, let data = snap.data() else { return }
+                guard let self = self,
+                      let data = snap?.documents.first?.data(),
+                      Self.isRealProfileDoc(data) else { return }
+                let verified = data["isVerified"] as? Bool ?? false
+                let complete = Self.profileComplete(from: data, isVerified: verified)
                 DispatchQueue.main.async {
                     self.role = .caretaker
-                    self.isVerified = data["isVerified"] as? Bool ?? false
-                    self.isProfileComplete = data["isProfileComplete"] as? Bool ?? false
+                    self.isVerified = verified
+                    self.isProfileComplete = complete
                     self.isLoading = false
                 }
             }
 
-        // 2. Listen to Dog Walkers
-        let dwListener = db.collection("dogwalkers").document(uid)
+        let ctUidListener = db.collection("caretakers").document(uid)
             .addSnapshotListener { [weak self] snap, _ in
-                guard let self = self, let snap = snap, snap.exists, let data = snap.data() else { return }
+                guard let self = self,
+                      let data = snap?.data(),
+                      snap?.exists == true,
+                      Self.isRealProfileDoc(data) else { return }
+                let verified = data["isVerified"] as? Bool ?? false
+                let complete = Self.profileComplete(from: data, isVerified: verified)
+                DispatchQueue.main.async {
+                    self.role = .caretaker
+                    self.isVerified = verified
+                    self.isProfileComplete = complete
+                    self.isLoading = false
+                }
+            }
+
+        // 2. Dog Walkers — same dual lookup
+        let dwEmailListener = db.collection("dogwalkers")
+            .whereField("email", isEqualTo: email)
+            .addSnapshotListener { [weak self] snap, _ in
+                guard let self = self,
+                      let data = snap?.documents.first?.data(),
+                      Self.isRealProfileDoc(data) else { return }
+                let verified = data["isVerified"] as? Bool ?? false
+                let complete = Self.profileComplete(from: data, isVerified: verified)
                 DispatchQueue.main.async {
                     self.role = .dogWalker
-                    self.isVerified = data["isVerified"] as? Bool ?? false
-                    self.isProfileComplete = data["isProfileComplete"] as? Bool ?? false
+                    self.isVerified = verified
+                    self.isProfileComplete = complete
+                    self.isLoading = false
+                }
+            }
+
+        let dwUidListener = db.collection("dogwalkers").document(uid)
+            .addSnapshotListener { [weak self] snap, _ in
+                guard let self = self,
+                      let data = snap?.data(),
+                      snap?.exists == true,
+                      Self.isRealProfileDoc(data) else { return }
+                let verified = data["isVerified"] as? Bool ?? false
+                let complete = Self.profileComplete(from: data, isVerified: verified)
+                DispatchQueue.main.async {
+                    self.role = .dogWalker
+                    self.isVerified = verified
+                    self.isProfileComplete = complete
                     self.isLoading = false
                 }
             }
@@ -65,25 +109,42 @@ class UserRoleViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snap, _ in
                 guard let self = self, let snap = snap, snap.exists else { return }
                 DispatchQueue.main.async {
-                    // Only stop loading if we haven't already resolved a higher role
                     if self.isLoading && self.role == .petOwner {
                         self.isLoading = false
                     }
                 }
             }
 
-        listeners.append(contentsOf: [ctListener, dwListener, poListener])
+        listeners.append(contentsOf: [ctEmailListener, ctUidListener,
+                                      dwEmailListener, dwUidListener, poListener])
 
         // Safety timeout in case of network lag
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
             guard let self = self else { return }
-            if self.isLoading {
-                self.isLoading = false
-            }
+            if self.isLoading { self.isLoading = false }
         }
     }
 
     func refresh() {
         // Just let the active snapshot listeners do their job
+    }
+
+    // A real profile document has at least one meaningful field beyond stub fields.
+    private static func isRealProfileDoc(_ data: [String: Any]) -> Bool {
+        let stubOnlyKeys: Set<String> = ["distanceAway", "status"]
+        return data.keys.contains(where: { !stubOnlyKeys.contains($0) })
+    }
+
+    // Profile is complete if:
+    // • the isProfileComplete flag is set, OR
+    // • admin already verified them (they must have submitted a full profile), OR
+    // • all three core fields are present (covers manually-added DB entries)
+    private static func profileComplete(from data: [String: Any], isVerified: Bool) -> Bool {
+        if data["isProfileComplete"] as? Bool == true { return true }
+        if isVerified { return true }
+        let address = (data["address"]     as? String ?? "").trimmingCharacters(in: .whitespaces)
+        let bio     = (data["bio"]         as? String ?? "").trimmingCharacters(in: .whitespaces)
+        let phone   = (data["phoneNumber"] as? String ?? "").trimmingCharacters(in: .whitespaces)
+        return !address.isEmpty && !bio.isEmpty && !phone.isEmpty
     }
 }

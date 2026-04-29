@@ -77,10 +77,7 @@ struct CaregiverBookingsView: View {
                                     ForEach(items) { booking in
                                         let bookingItem = convertToBookingItem(booking)
                                         NavigationLink(destination: destinationView(for: bookingItem)) {
-                                            CaregiverBookingCard(
-                                                booking: booking,
-                                                onMarkComplete: selectedTab == 0 ? { viewModel.markAsCompleted(booking: booking) } : nil
-                                            )
+                                            CaregiverBookingCard(booking: booking)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -150,7 +147,6 @@ struct CaregiverBookingsView: View {
 // MARK: - Booking Card
 struct CaregiverBookingCard: View {
     let booking: CaregiverBookingItem
-    var onMarkComplete: (() -> Void)?
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
@@ -179,24 +175,8 @@ struct CaregiverBookingCard: View {
                     .foregroundColor(.gray)
                     .lineLimit(2)
 
-                HStack {
-                    statusBadge
-
-                    Spacer()
-
-                    if let complete = onMarkComplete {
-                        Button(action: complete) {
-                            Text("Mark Complete")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(snuffyPink)
-                                .cornerRadius(14)
-                        }
-                    }
-                }
-                .padding(.top, 4)
+                statusBadge
+                    .padding(.top, 4)
             }
         }
         .padding(16)
