@@ -9,8 +9,9 @@ import MessageUI
 
 struct DogWalkerBookingsInfoView: View {
     let booking: BookingItem
-    @StateObject private var viewModel: DogWalkerBookingsInfoViewModel
-    @StateObject private var ratingVM:  RatingViewModel
+    @StateObject private var viewModel:  DogWalkerBookingsInfoViewModel
+    @StateObject private var ratingVM:   RatingViewModel
+    @StateObject private var serviceVM:  ServiceFlowViewModel
     @Environment(\.dismiss) var dismiss
 
     @State private var showingMessageComposer = false
@@ -24,12 +25,13 @@ struct DogWalkerBookingsInfoView: View {
 
     init(booking: BookingItem) {
         self.booking = booking
-        _viewModel = StateObject(wrappedValue: DogWalkerBookingsInfoViewModel())
-        _ratingVM  = StateObject(wrappedValue: RatingViewModel(
+        _viewModel  = StateObject(wrappedValue: DogWalkerBookingsInfoViewModel())
+        _ratingVM   = StateObject(wrappedValue: RatingViewModel(
             targetId:       booking.dogWalkerRequest?.dogWalkerId ?? "",
             collectionName: "dogwalkers",
             bookingId:      booking.id
         ))
+        _serviceVM  = StateObject(wrappedValue: ServiceFlowViewModel(booking: booking))
     }
 
     var body: some View {
@@ -40,6 +42,9 @@ struct DogWalkerBookingsInfoView: View {
                 VStack(alignment: .leading, spacing: 20) {
 
                     headerView.padding(.top, 10)
+
+                    // MARK: Service Flow (Start / PIN)
+                    serviceFlowSection
 
                     if viewModel.isLoading {
                         HStack { Spacer(); ProgressView().padding(.top, 50); Spacer() }
@@ -288,6 +293,107 @@ struct DogWalkerBookingsInfoView: View {
                 .foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
             Text(text).font(.system(size: 15)).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+    }
+
+    // MARK: – Service Flow (Pet Owner Side)
+
+    @ViewBuilder
+    private var serviceFlowSection: some View {
+        if !isCompleted {
+            if serviceVM.canStartService {
+                sectionTitle("Service")
+                startServiceCard
+            } else if serviceVM.hasPinPending {
+                sectionTitle("Service")
+                pinDisplayCard
+            } else if serviceVM.firestoreStatus == "ongoing" {
+                sectionTitle("Service")
+                serviceOngoingCard
+            }
+        }
+    }
+
+    private var startServiceCard: some View {
+        Button {
+            Task { await serviceVM.generatePin() }
+        } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle().fill(snuffyPink.opacity(0.12)).frame(width: 40, height: 40)
+                    Image(systemName: "play.circle.fill")
+                        .foregroundColor(snuffyPink).font(.system(size: 22))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Start Service")
+                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
+                    Text("Tap to generate a PIN for your dog walker")
+                        .font(.system(size: 12)).foregroundColor(.gray)
+                }
+                Spacer()
+                if serviceVM.isGeneratingPin {
+                    ProgressView().tint(snuffyPink)
+                } else {
+                    Image(systemName: "chevron.right").foregroundColor(.gray).font(.system(size: 14))
+                }
+            }
+            .padding(16)
+            .background(Color.white).cornerRadius(20)
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
+        .disabled(serviceVM.isGeneratingPin)
+    }
+
+    private var pinDisplayCard: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 8) {
+                Image(systemName: "key.fill").foregroundColor(snuffyPink).font(.system(size: 14))
+                Text("Share this PIN with your dog walker")
+                    .font(.system(size: 13)).foregroundColor(.secondary)
+            }
+            HStack(spacing: 12) {
+                ForEach(Array((serviceVM.servicePin ?? "----").enumerated()), id: \.offset) { _, ch in
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(snuffyPink.opacity(0.1))
+                            .frame(width: 56, height: 64)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(snuffyPink.opacity(0.4), lineWidth: 1.5)
+                            )
+                        Text(String(ch))
+                            .font(.system(size: 28, weight: .bold, design: .monospaced))
+                            .foregroundColor(snuffyPink)
+                    }
+                }
+            }
+            Text("Waiting for dog walker to enter PIN…")
+                .font(.system(size: 12)).foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20).padding(.horizontal, 16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+    }
+
+    private var serviceOngoingCard: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle().fill(snuffyPink.opacity(0.12)).frame(width: 40, height: 40)
+                Image(systemName: "figure.walk")
+                    .foregroundColor(snuffyPink).font(.system(size: 18))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Walk in Progress")
+                    .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
+                Text("Your pet is out on a walk")
+                    .font(.system(size: 12)).foregroundColor(.gray)
+            }
             Spacer()
         }
         .padding(16)
