@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// Snuffy Cloud Storage rules.
+//
+// All profile-picture buckets follow the same shape: any signed-in user
+// can read (so the app can render the picture), but only the owner can
+// upload/replace/delete their own file. Profile-picture uploads are
+// keyed as "<uid>.jpg" by the iOS client (see FirebaseManager.swift).
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isImage() {
+      return request.resource != null
+        && request.resource.contentType.matches("image/.*")
+        && request.resource.size < 8 * 1024 * 1024;
+    }
+
+    function ownsProfileFile(filename) {
+      return isSignedIn() && filename.matches(request.auth.uid + "\\..*");
+    }
+
+    // Pet owner profile pictures
+    match /user_profile_pictures/{filename} {
+      allow read:   if isSignedIn();
+      allow write:  if ownsProfileFile(filename) && isImage();
+      allow delete: if ownsProfileFile(filename);
+    }
+
+    // Caretaker profile pictures
+    match /profile_pictures/{filename} {
+      allow read:   if isSignedIn();
+      allow write:  if ownsProfileFile(filename) && isImage();
+      allow delete: if ownsProfileFile(filename);
+    }
+
+    // Dog walker profile pictures
+    match /dogwalker_profile_pictures/{filename} {
+      allow read:   if isSignedIn();
+      allow write:  if ownsProfileFile(filename) && isImage();
+      allow delete: if ownsProfileFile(filename);
+    }
+
+    // Community uploads — pathed under {uid}/...
+    match /community_posts/{uid}/{filename=**} {
+      allow read:   if isSignedIn();
+      allow write:  if isSignedIn() && request.auth.uid == uid && isImage();
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Pet imagery — pathed under {uid}/...
+    match /pet_pictures/{uid}/{filename=**} {
+      allow read:   if isSignedIn();
+      allow write:  if isSignedIn() && request.auth.uid == uid && isImage();
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+  }
+}
