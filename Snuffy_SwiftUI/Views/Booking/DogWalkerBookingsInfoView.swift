@@ -22,6 +22,7 @@ struct DogWalkerBookingsInfoView: View {
 
     private var req: ScheduleDogWalkerRequest? { booking.dogWalkerRequest }
     private var isCompleted: Bool { booking.dynamicStatus == .completed }
+    private var isWaitingForAcceptance: Bool { booking.dynamicStatus == .requested }
 
     init(booking: BookingItem) {
         self.booking = booking
@@ -35,7 +36,7 @@ struct DogWalkerBookingsInfoView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             bgColor.ignoresSafeArea()
 
             ScrollView {
@@ -98,7 +99,21 @@ struct DogWalkerBookingsInfoView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
             }
+            .blur(radius: isWaitingForAcceptance ? 18 : 0)
+            .disabled(isWaitingForAcceptance)
+            .allowsHitTesting(!isWaitingForAcceptance)
+
+            if isWaitingForAcceptance {
+                FindingProviderOverlay(provider: .dogWalker)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity)
+
+                floatingBackButton
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: isWaitingForAcceptance)
         .navigationBarHidden(true)
         .onAppear {
             if let walkerId = req?.dogWalkerId, !walkerId.isEmpty {
@@ -146,6 +161,20 @@ struct DogWalkerBookingsInfoView: View {
                 .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Back button rendered above the blurred content while waiting for acceptance,
+    /// so the pet owner can still leave the screen.
+    private var floatingBackButton: some View {
+        Button { dismiss() } label: {
+            Image(systemName: "chevron.left")
+                .foregroundColor(.black)
+                .font(.system(size: 18, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(Color.white)
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
+        }
     }
 
     private func sectionTitle(_ text: String) -> some View {

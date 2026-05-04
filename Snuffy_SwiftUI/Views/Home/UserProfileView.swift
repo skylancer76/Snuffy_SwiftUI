@@ -16,7 +16,8 @@ struct UserProfileView: View {
     @State private var showImagePicker = false
     @State private var selectedImage: UIImage?
     @State private var photoItem: PhotosPickerItem?
-    
+    @State private var showDeleteConfirmation = false
+
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
@@ -258,7 +259,33 @@ struct UserProfileView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
-                        
+
+                        // MARK: - Delete Account
+                        Button(action: {
+                            showDeleteConfirmation = true
+                        }) {
+                            HStack(spacing: 10) {
+                                if viewModel.isDeletingAccount {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Image(systemName: "trash.fill")
+                                        .font(.system(size: 18, weight: .medium))
+                                }
+                                Text("Delete Account")
+                                    .font(.system(size: 18, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(snuffyPink)
+                            .cornerRadius(16)
+                            .shadow(color: snuffyPink.opacity(0.3), radius: 6, x: 0, y: 3)
+                        }
+                        .disabled(viewModel.isDeletingAccount)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+
                         Spacer().frame(height: 40)
                     }
                 }
@@ -273,6 +300,25 @@ struct UserProfileView: View {
                     viewModel.uploadProfilePicture(image)
                 }
             }
+        }
+        .alert("Delete Account?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task { await viewModel.deleteAccount() }
+            }
+        } message: {
+            Text("This permanently removes your profile, pets, bookings, and history from Snuffy. This action cannot be undone.")
+        }
+        .alert(
+            "Couldn't delete account",
+            isPresented: Binding(
+                get: { viewModel.deleteAccountError != nil },
+                set: { if !$0 { viewModel.deleteAccountError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.deleteAccountError = nil }
+        } message: {
+            Text(viewModel.deleteAccountError ?? "")
         }
     }
     

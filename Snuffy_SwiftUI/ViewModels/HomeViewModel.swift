@@ -28,6 +28,10 @@ class HomeViewModel: ObservableObject {
     @Published var selectedPet: PetData?
     @Published var searchText: String = ""
 
+    // MARK: - Delete account state
+    @Published var isDeletingAccount: Bool = false
+    @Published var deleteAccountError: String? = nil
+
     // MARK: - Search state
     @Published var shouldScrollToMyPets: Bool = false
     @Published var isSearchingPet: Bool = false
@@ -192,6 +196,22 @@ class HomeViewModel: ObservableObject {
         } catch {
             print("Error signing out: \(error.localizedDescription)")
         }
+    }
+
+    @MainActor
+    func deleteAccount() async {
+        guard !isDeletingAccount else { return }
+        isDeletingAccount = true
+        deleteAccountError = nil
+        do {
+            try await DeleteAccountService.shared.deleteCurrentUser()
+            shouldNavigateToLogin = true
+        } catch let err as DeleteAccountError {
+            deleteAccountError = err.errorDescription
+        } catch {
+            deleteAccountError = error.localizedDescription
+        }
+        isDeletingAccount = false
     }
 
     // MARK: - Profile Picture Upload

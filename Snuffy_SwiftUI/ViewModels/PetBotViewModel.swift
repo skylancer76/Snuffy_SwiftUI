@@ -6,6 +6,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 import Combine
 import UIKit
 
@@ -17,6 +18,7 @@ class PetBotViewModel: ObservableObject {
     @Published var dataLoadError: String?
 
     private let db = Firestore.firestore()
+    private let functions = Functions.functions()
     private var systemPrompt = ""
     // Multi-turn conversation history sent to Gemini
     private var geminiHistory: [GeminiContent] = []
@@ -173,18 +175,13 @@ class PetBotViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Gemini REST API (typed Codable request)
+    // MARK: - Gemini call via Cloud Function
+    //
+    // The API key lives server-side as a Firebase Secret. This client just
+    // forwards the same Gemini-shaped payload to the `geminiChat` callable,
+    // which proxies the request and returns `{ "text": "..." }`.
 
     private func callGemini(imageParts: [GeminiPart] = []) async throws -> String {
-        let key    = AIConfig.geminiAPIKey
-        let model  = AIConfig.geminiModel
-        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(key)"
-        guard let url = URL(string: urlStr) else { throw URLError(.badURL) }
-
-        var req        = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         // Inject image parts into the last (current) user turn
         var contents = geminiHistory
         if !imageParts.isEmpty, let last = contents.last {
@@ -195,21 +192,24 @@ class PetBotViewModel: ObservableObject {
         let payload = GeminiRequest(
             system_instruction: GeminiSystemInstruction(parts: [GeminiPart(text: systemPrompt)]),
             contents: contents,
-            generationConfig: GeminiGenerationConfig(temperature: 0.6, maxOutputTokens: 1024)
+            generationConfig: GeminiGenerationConfig(temperature: 0.6, maxOutputTokens: 1024),
+            model: AIConfig.geminiModel
         )
-        req.httpBody = try JSONEncoder().encode(payload)
 
-        let (data, response) = try await URLSession.shared.data(for: req)
-
-        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-            let body = String(data: data, encoding: .utf8) ?? "(empty)"
-            print("[PetBot] HTTP \(http.statusCode): \(body)")
-            throw NSError(domain: "Gemini", code: http.statusCode,
-                          userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(body)"])
+        let payloadData = try JSONEncoder().encode(payload)
+        guard let payloadDict = try JSONSerialization.jsonObject(with: payloadData) as? [String: Any] else {
+            throw NSError(domain: "Gemini", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Couldn't encode request payload."])
         }
 
-        let parsed = try JSONDecoder().decode(GeminiResponse.self, from: data)
-        guard let text = parsed.candidates?.first?.content?.parts?.first?.text else {
+        let callable = functions.httpsCallable(AIConfig.geminiCallableName)
+        let result = try await callable.call(payloadDict)
+
+        guard
+            let dict = result.data as? [String: Any],
+            let text = dict["text"] as? String,
+            !text.isEmpty
+        else {
             throw NSError(domain: "Gemini", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Empty response"])
         }
@@ -271,9 +271,5 @@ private struct GeminiRequest: Codable {
     let system_instruction: GeminiSystemInstruction
     let contents: [GeminiContent]
     let generationConfig: GeminiGenerationConfig
+    let model: String
 }
-
-private struct GeminiResponsePart: Codable { let text: String? }
-private struct GeminiResponseContent: Codable { let parts: [GeminiResponsePart]? }
-private struct GeminiCandidate: Codable { let content: GeminiResponseContent? }
-private struct GeminiResponse: Codable { let candidates: [GeminiCandidate]? }
