@@ -267,7 +267,7 @@ struct UserProfileView: View {
                             HStack(spacing: 10) {
                                 if viewModel.isDeletingAccount {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .red))
                                 } else {
                                     Image(systemName: "trash.fill")
                                         .font(.system(size: 18, weight: .medium))
@@ -275,12 +275,11 @@ struct UserProfileView: View {
                                 Text("Delete Account")
                                     .font(.system(size: 18, weight: .semibold))
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(.red)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(snuffyPink)
+                            .background(Color.red.opacity(0.12))
                             .cornerRadius(16)
-                            .shadow(color: snuffyPink.opacity(0.3), radius: 6, x: 0, y: 3)
                         }
                         .disabled(viewModel.isDeletingAccount)
                         .padding(.horizontal, 16)

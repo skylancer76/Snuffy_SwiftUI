@@ -67,7 +67,7 @@ struct FindingProviderOverlay: View {
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.black)
                         .multilineTextAlignment(.center)
-                    Text("We'll unlock the booking details as soon as they accept your request.")
+                    Text("We'll unlock the booking details as soon as the service provider accepts your request.")
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
