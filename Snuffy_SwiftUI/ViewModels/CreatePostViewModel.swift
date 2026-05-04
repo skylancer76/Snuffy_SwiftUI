@@ -55,12 +55,18 @@ class CreatePostViewModel: ObservableObject {
         let postId = UUID().uuidString
         let userId = user.uid
 
-        // 1. Fetch user's name from Firestore
+        // 1. Fetch user's name + avatar from Firestore.
+        // The app stores the uploaded profile picture under
+        // users/{uid}.profilePicURL — Auth.currentUser.photoURL is never
+        // populated by the app, so reading it here would always yield nil
+        // and the post would render the initials fallback.
         db.collection("users").document(userId).getDocument { [weak self] snapshot, error in
             guard let self = self else { return }
-            let fetchedName = snapshot?.data()?["name"] as? String
-            // Fallback: displayName -> "User Name"
+            let data = snapshot?.data()
+            let fetchedName = data?["name"] as? String
             let finalUserName = fetchedName ?? user.displayName ?? "User Name"
+            let finalAvatarURL = (data?["profilePicURL"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                ?? user.photoURL?.absoluteString
 
             if self.selectedMediaType == .image, let image = self.selectedImage {
                 self.uploadImage(image, path: "community/\(postId)/media.jpg") { [weak self] result in
@@ -69,7 +75,7 @@ class CreatePostViewModel: ObservableObject {
                     case .success(let url):
                         self.savePost(postId: postId, userId: userId,
                                       userName: finalUserName,
-                                      avatarURL: user.photoURL?.absoluteString,
+                                      avatarURL: finalAvatarURL,
                                       mediaURL: url, mediaType: .image)
                     case .failure(let err):
                         self.errorMessage = err.localizedDescription
@@ -83,7 +89,7 @@ class CreatePostViewModel: ObservableObject {
                     case .success(let url):
                         self.savePost(postId: postId, userId: userId,
                                       userName: finalUserName,
-                                      avatarURL: user.photoURL?.absoluteString,
+                                      avatarURL: finalAvatarURL,
                                       mediaURL: url, mediaType: .video)
                     case .failure(let err):
                         self.errorMessage = err.localizedDescription
@@ -94,7 +100,7 @@ class CreatePostViewModel: ObservableObject {
                 // Text only
                 self.savePost(postId: postId, userId: userId,
                               userName: finalUserName,
-                              avatarURL: user.photoURL?.absoluteString,
+                              avatarURL: finalAvatarURL,
                               mediaURL: nil, mediaType: .text)
             }
         }
