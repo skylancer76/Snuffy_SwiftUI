@@ -94,7 +94,6 @@ class BookCaretakerViewModel: ObservableObject {
     }
     
     func navigateToAddPet() {
-        // TODO: Implement navigation to add pet
-        print("Navigate to add pet screen")
+        NotificationCenter.default.post(name: NSNotification.Name("SwitchToMyPetsTab"), object: nil)
     }
 }

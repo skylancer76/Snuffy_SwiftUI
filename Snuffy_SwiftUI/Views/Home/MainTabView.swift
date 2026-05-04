@@ -66,6 +66,9 @@ struct MainTabView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToMyPetsTab"))) { _ in
+                    selectedTab = 2
+                }
 
                 // Floating Tab Bar — hidden during onboarding / waitlist
                 if showTabBar {

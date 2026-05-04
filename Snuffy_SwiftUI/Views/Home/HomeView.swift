@@ -27,9 +27,9 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 LinearGradient(
-                    colors: [snuffyPink.opacity(0.4), Color.white],
+                    colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
                     startPoint: .top,
-                    endPoint: .bottom
+                    endPoint: .center
                 )
                 .ignoresSafeArea()
 
@@ -46,17 +46,27 @@ struct HomeView: View {
 
                                     Spacer()
 
-                                    // Profile initials circle
+                                    // Profile circle
                                     Button {
                                         viewModel.shouldNavigateToProfile = true
                                     } label: {
-                                        ZStack {
-                                            Circle()
-                                                .fill(snuffyPink)
-                                                .frame(width: 42, height: 42)
-                                            Text(viewModel.userInitials)
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .foregroundColor(.white)
+                                        if let urlString = viewModel.profilePicURL,
+                                           !urlString.isEmpty,
+                                           let url = URL(string: urlString) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 42, height: 42)
+                                                        .clipShape(Circle())
+                                                default:
+                                                    profileInitialsCircle
+                                                }
+                                            }
+                                        } else {
+                                            profileInitialsCircle
                                         }
                                     }
                                 }
@@ -238,6 +248,18 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Profile Initials Circle
+    private var profileInitialsCircle: some View {
+        ZStack {
+            Circle()
+                .fill(snuffyPink)
+                .frame(width: 42, height: 42)
+            Text(viewModel.userInitials)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+        }
+    }
+
     // MARK: - Floating Pet Bot Button
 
     private var petBotButton: some View {
@@ -359,7 +381,7 @@ struct SearchBarView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 13)
-        .background(Color.black.opacity(0.08))
+        .background(Color.white.opacity(0.8))
         .clipShape(Capsule())
     }
 }

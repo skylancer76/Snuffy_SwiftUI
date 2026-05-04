@@ -20,43 +20,21 @@ struct AddPetMedicationView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .foregroundColor(snuffyPink)
-                
-                Spacer()
-                
-                Text("Add Medication")
-                    .font(.system(size: 18, weight: .bold))
-                
-                Spacer()
-                
-                Button("Save") {
-                    viewModel.saveMedication()
-                }
-                .foregroundColor(snuffyPink)
-                .bold()
-                .disabled(viewModel.isLoading)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
+        ZStack {
+            Color(UIColor.systemGray6)
+                .ignoresSafeArea()
             
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: 24) {
                     // Medication Details Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("MEDICATION DETAILS")
-                            .font(.system(size: 13, weight: .medium))
+                        Text("Medication Details")
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.leading, 16)
+                            .padding(.horizontal, 20)
                         
                         VStack(spacing: 0) {
-                            FormRow(label: "Medicine Name", value: $viewModel.medicineName, placeholder: "Value")
+                            FormRow(label: "Medicine Name", value: $viewModel.medicineName, placeholder: "e.g. Amoxicillin")
                             
                             Divider().padding(.leading, 16)
                             
@@ -72,15 +50,15 @@ struct AddPetMedicationView: View {
                             
                             Divider().padding(.leading, 16)
                             
-                            FormRow(label: "Purpose", value: $viewModel.purpose, placeholder: "Value")
+                            FormRow(label: "Purpose", value: $viewModel.purpose, placeholder: "e.g. Infection treatment")
                             
                             Divider().padding(.leading, 16)
                             
-                            FormRow(label: "Frequency", value: $viewModel.frequency, placeholder: "Value")
+                            FormRow(label: "Frequency", value: $viewModel.frequency, placeholder: "e.g. Twice daily")
                             
                             Divider().padding(.leading, 16)
                             
-                            FormRow(label: "Dosage", value: $viewModel.dosage, placeholder: "Value")
+                            FormRow(label: "Dosage", value: $viewModel.dosage, placeholder: "e.g. 250mg")
                             
                             Divider().padding(.leading, 16)
                             
@@ -95,6 +73,7 @@ struct AddPetMedicationView: View {
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 54)
+                            .background(Color.white)
                             
                             Divider().padding(.leading, 16)
                             
@@ -109,27 +88,55 @@ struct AddPetMedicationView: View {
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 54)
+                            .background(Color.white)
                         }
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                    }
-                    .padding(.top, 20)
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 40)
-            }
-            .background(Color(red: 0.98, green: 0.98, blue: 1.0))
-        }
-        .overlay {
-            if viewModel.isLoading {
-                ZStack {
-                    Color.black.opacity(0.2).ignoresSafeArea()
-                    ProgressView()
-                        .padding(20)
-                        .background(Color.white)
                         .cornerRadius(12)
+                        .padding(.horizontal, 20)
+                    }
+                    
+                    // Add Medication Button
+                    Button(action: {
+                        viewModel.saveMedication()
+                    }) {
+                        Text("Add Medication")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(snuffyPink)
+                            .cornerRadius(30)
+                    }
+                    .padding(.horizontal, 20)
+                    .disabled(viewModel.isLoading)
                 }
+                .padding(.vertical, 24)
+            }
+            
+            if viewModel.isLoading {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .progressViewStyle(CircularProgressViewStyle(tint: snuffyPink))
+            }
+        }
+        .navigationTitle("Add Medication")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
             }
         }
         .onChange(of: viewModel.isSuccess) { success in

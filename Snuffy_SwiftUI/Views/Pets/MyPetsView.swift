@@ -20,9 +20,9 @@ struct MyPetsView: View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 LinearGradient(
-                    colors: [snuffyPink.opacity(0.4), Color.white],
+                    colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
                     startPoint: .top,
-                    endPoint: .bottom
+                    endPoint: .center
                 )
                 .ignoresSafeArea()
                 
