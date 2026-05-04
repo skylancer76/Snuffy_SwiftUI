@@ -6,6 +6,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 import Combine
 import UIKit
 
@@ -17,6 +18,7 @@ class PetBotViewModel: ObservableObject {
     @Published var dataLoadError: String?
 
     private let db = Firestore.firestore()
+    private let functions = Functions.functions()
     private var systemPrompt = ""
     // Multi-turn conversation history sent to Gemini
     private var geminiHistory: [GeminiContent] = []
@@ -114,16 +116,21 @@ class PetBotViewModel: ObservableObject {
             let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .none)
 
             systemPrompt = """
-            You are Snuffy Bot, a warm and knowledgeable AI assistant for pet owners inside the Snuffy app. \
-            Your job is to answer questions specifically about the user's pets based on the data below. \
-            Be friendly, concise, and accurate. Format lists with bullet points. \
-            IMPORTANT: You are read-only. You cannot add, edit, or delete any data in the app. \
-            Never offer or suggest making changes to the app on the user's behalf. \
-            If the user asks you to add, update, or remove anything, tell them they can do it themselves in the app. \
-            If asked about something unrelated to their pets or pet care, politely redirect. \
+            You are Snuffy Bot, a warm and knowledgeable AI assistant for pet owners inside the Snuffy app.
+
+            You help with two kinds of questions:
+            1. Anything about the user's OWN pets — names, breeds, age, vaccinations, medications, diet, schedules — using the data below.
+            2. General pet-care knowledge — breeds, training, nutrition, behaviour, climate suitability, grooming, common illnesses, vet-visit prep, travel tips, and similar topics — even when the question isn't about the user's specific pets.
+
+            When a question is general (e.g. "what dog breeds are best to adopt for Chennai weather", "how often should I bathe a Labrador", "what foods are toxic to dogs"), ANSWER IT DIRECTLY with substantive, practical guidance. Where it's natural, weave in the user's own pets for personalization (e.g. "Max is a Labrador, so for him specifically…"), but do not refuse or redirect general pet-care questions.
+
+            Style: friendly, concise, accurate. Use bullet points for lists. For medical questions, give safe everyday guidance and recommend a vet for anything serious or pet-specific diagnosis.
+
+            You are read-only inside the app. You cannot add, edit, or delete data. If asked to make changes, tell the user they can do it themselves in Snuffy. Politely redirect ONLY if the question has nothing to do with pets or pet care (e.g. politics, coding help, news).
+
             Today's date is \(dateStr).
 
-            \(contextBlocks.isEmpty ? "The user has no pets registered yet. Encourage them to add pets in the app." : contextBlocks.joined(separator: "\n\n"))
+            \(contextBlocks.isEmpty ? "The user has no pets registered yet — encourage them to add pets in the app, but still answer general pet-care questions normally." : contextBlocks.joined(separator: "\n\n"))
             """
 
         } catch {
@@ -168,23 +175,42 @@ class PetBotViewModel: ObservableObject {
             if geminiHistory.count > 40 { geminiHistory.removeFirst(2) }
         } catch {
             print("[PetBot] Gemini error: \(error)")
-            let errMsg = PetBotMessage(text: "Sorry, I couldn't connect. Please try again.", isUser: false)
+            let userMessage = userFacingMessage(for: error)
+            let errMsg = PetBotMessage(text: userMessage, isUser: false)
             messages.append(errMsg)
         }
     }
 
-    // MARK: - Gemini REST API (typed Codable request)
+    /// Translate a callable / network error into something the chat surface
+    /// can show. Firebase callable errors carry an `FunctionsErrorCode` plus
+    /// a server-supplied message which is typically far more useful than a
+    /// blanket "couldn't connect".
+    private func userFacingMessage(for error: Error) -> String {
+        let nsErr = error as NSError
+        if nsErr.domain == FunctionsErrorDomain {
+            if let code = FunctionsErrorCode(rawValue: nsErr.code) {
+                switch code {
+                case .unauthenticated:
+                    return "Please sign in again to use Snuffy Bot."
+                case .notFound:
+                    return "Snuffy Bot isn't deployed yet. Please try again in a moment."
+                case .failedPrecondition:
+                    return nsErr.localizedDescription
+                default:
+                    return "Snuffy Bot is unavailable right now. Please try again."
+                }
+            }
+        }
+        return "Sorry, I couldn't connect. Please try again."
+    }
+
+    // MARK: - Gemini call via Cloud Function
+    //
+    // The API key lives server-side as a Firebase Secret. This client just
+    // forwards the same Gemini-shaped payload to the `geminiChat` callable,
+    // which proxies the request and returns `{ "text": "..." }`.
 
     private func callGemini(imageParts: [GeminiPart] = []) async throws -> String {
-        let key    = AIConfig.geminiAPIKey
-        let model  = AIConfig.geminiModel
-        let urlStr = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(key)"
-        guard let url = URL(string: urlStr) else { throw URLError(.badURL) }
-
-        var req        = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         // Inject image parts into the last (current) user turn
         var contents = geminiHistory
         if !imageParts.isEmpty, let last = contents.last {
@@ -195,21 +221,24 @@ class PetBotViewModel: ObservableObject {
         let payload = GeminiRequest(
             system_instruction: GeminiSystemInstruction(parts: [GeminiPart(text: systemPrompt)]),
             contents: contents,
-            generationConfig: GeminiGenerationConfig(temperature: 0.6, maxOutputTokens: 1024)
+            generationConfig: GeminiGenerationConfig(temperature: 0.6, maxOutputTokens: 1024),
+            model: AIConfig.geminiModel
         )
-        req.httpBody = try JSONEncoder().encode(payload)
 
-        let (data, response) = try await URLSession.shared.data(for: req)
-
-        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-            let body = String(data: data, encoding: .utf8) ?? "(empty)"
-            print("[PetBot] HTTP \(http.statusCode): \(body)")
-            throw NSError(domain: "Gemini", code: http.statusCode,
-                          userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(body)"])
+        let payloadData = try JSONEncoder().encode(payload)
+        guard let payloadDict = try JSONSerialization.jsonObject(with: payloadData) as? [String: Any] else {
+            throw NSError(domain: "Gemini", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Couldn't encode request payload."])
         }
 
-        let parsed = try JSONDecoder().decode(GeminiResponse.self, from: data)
-        guard let text = parsed.candidates?.first?.content?.parts?.first?.text else {
+        let callable = functions.httpsCallable(AIConfig.geminiCallableName)
+        let result = try await callable.call(payloadDict)
+
+        guard
+            let dict = result.data as? [String: Any],
+            let text = dict["text"] as? String,
+            !text.isEmpty
+        else {
             throw NSError(domain: "Gemini", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Empty response"])
         }
@@ -271,9 +300,5 @@ private struct GeminiRequest: Codable {
     let system_instruction: GeminiSystemInstruction
     let contents: [GeminiContent]
     let generationConfig: GeminiGenerationConfig
+    let model: String
 }
-
-private struct GeminiResponsePart: Codable { let text: String? }
-private struct GeminiResponseContent: Codable { let parts: [GeminiResponsePart]? }
-private struct GeminiCandidate: Codable { let content: GeminiResponseContent? }
-private struct GeminiResponse: Codable { let candidates: [GeminiCandidate]? }
