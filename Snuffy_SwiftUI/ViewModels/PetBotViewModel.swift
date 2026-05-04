@@ -170,9 +170,33 @@ class PetBotViewModel: ObservableObject {
             if geminiHistory.count > 40 { geminiHistory.removeFirst(2) }
         } catch {
             print("[PetBot] Gemini error: \(error)")
-            let errMsg = PetBotMessage(text: "Sorry, I couldn't connect. Please try again.", isUser: false)
+            let userMessage = userFacingMessage(for: error)
+            let errMsg = PetBotMessage(text: userMessage, isUser: false)
             messages.append(errMsg)
         }
+    }
+
+    /// Translate a callable / network error into something the chat surface
+    /// can show. Firebase callable errors carry an `FunctionsErrorCode` plus
+    /// a server-supplied message which is typically far more useful than a
+    /// blanket "couldn't connect".
+    private func userFacingMessage(for error: Error) -> String {
+        let nsErr = error as NSError
+        if nsErr.domain == FunctionsErrorDomain {
+            if let code = FunctionsErrorCode(rawValue: nsErr.code) {
+                switch code {
+                case .unauthenticated:
+                    return "Please sign in again to use Snuffy Bot."
+                case .notFound:
+                    return "Snuffy Bot isn't deployed yet. Please try again in a moment."
+                case .failedPrecondition:
+                    return nsErr.localizedDescription
+                default:
+                    return "Snuffy Bot is unavailable right now. Please try again."
+                }
+            }
+        }
+        return "Sorry, I couldn't connect. Please try again."
     }
 
     // MARK: - Gemini call via Cloud Function

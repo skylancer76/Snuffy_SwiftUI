@@ -68,7 +68,7 @@ struct CommunityView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
-                        .padding(.bottom, 15)
+                        .padding(.bottom, 30)
 
                         // MARK: - Search / Filter Bar
                         SearchBarView(
@@ -85,7 +85,7 @@ struct CommunityView: View {
                             }
                         )
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 22)
+                        .padding(.bottom, 30)
 
                         // MARK: - Events
                         if !viewModel.events.isEmpty {
@@ -236,26 +236,28 @@ struct CommunityView: View {
     }
 }
 
-// MARK: - Event Card (Redesigned)
+// MARK: - Event Card
+//
+// Mirrors `PetCardView`: a flush image at the top with a white text panel
+// directly underneath — no inner padding around the image, single rounded
+// container, soft drop shadow.
 struct EventCard: View {
     let event: CommunityEvent
     let snuffyPink: Color
 
-    private let cardW: CGFloat = 220
+    private let cardWidth: CGFloat = 180
+    private let imageHeight: CGFloat = 140
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Big Rounded Image up top
+            // Pet-card style: image fills the top of the card edge-to-edge
             ZStack {
                 if let urlStr = event.imageURL, let url = URL(string: urlStr) {
                     AsyncImage(url: url) { phase in
-                        if case .success(let img) = phase {
-                            Color.clear
-                                .overlay(
-                                    img.resizable().scaledToFill()
-                                )
-                                .clipped()
-                        } else {
+                        switch phase {
+                        case .success(let img):
+                            img.resizable().scaledToFill()
+                        default:
                             eventPlaceholder
                         }
                     }
@@ -263,30 +265,29 @@ struct EventCard: View {
                     eventPlaceholder
                 }
             }
-            .frame(height: 180)
+            .frame(minWidth: 0, maxWidth: .infinity, minHeight: imageHeight, maxHeight: imageHeight)
             .clipped()
-            .cornerRadius(20)
-            .padding(12)
 
-            // Text Info at bottom
+            // Text panel below, same shape as PetCardView
             VStack(alignment: .leading, spacing: 4) {
                 Text(event.title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.black)
                     .lineLimit(1)
 
-                Text(formattedDateTime(event.eventDate))
-                    .font(.system(size: 12))
+                Text(formattedDateDay(event.eventDate))
+                    .font(.system(size: 14))
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 20)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white)
         }
-        .frame(width: cardW)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: snuffyPink.opacity(0.15), radius: 15, x: 0, y: 8)
+        .frame(width: cardWidth)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
 
     private var eventPlaceholder: some View {
@@ -297,10 +298,12 @@ struct EventCard: View {
                 .foregroundColor(snuffyPink.opacity(0.4))
         }
     }
-    
-    private func formattedDateTime(_ date: Date) -> String {
+
+    /// "Date • Day" only — time intentionally dropped so the card matches
+    /// PetCardView's compact two-line layout.
+    private func formattedDateDay(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMMM, yyyy • EEEE • hh:mm a"
+        formatter.dateFormat = "dd MMM yyyy • EEEE"
         return formatter.string(from: date)
     }
 }
