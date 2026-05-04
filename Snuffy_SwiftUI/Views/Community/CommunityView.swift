@@ -38,7 +38,7 @@ struct CommunityView: View {
             ZStack(alignment: .bottomTrailing) {
 
                 // MARK: - Background Gradient
-                LinearGradient(colors: [snuffyPink.opacity(0.35), Color.white],
+                LinearGradient(colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
                                startPoint: .top, endPoint: .center)
                 .ignoresSafeArea()
 
@@ -46,14 +46,14 @@ struct CommunityView: View {
                     VStack(alignment: .leading, spacing: 0) {
 
                         // MARK: - Header
-                        HStack(alignment: .center) {
+                        HStack(alignment: .center, spacing: 12) {
                             Text("Community")
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(.black)
                                 
                             Spacer()
                             
-                            // Add button moved to top right corner
+                            // Add button
                             Button {
                                 viewModel.showCreateMenu = true
                             } label: {
@@ -71,28 +71,19 @@ struct CommunityView: View {
                         .padding(.bottom, 15)
 
                         // MARK: - Search / Filter Bar
-                        HStack(spacing: 10) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 14))
-                            TextField("Search events by name or label…", text: $searchText)
-                                .font(.system(size: 14))
-                                .onChange(of: searchText) { _, text in
-                                    if !text.isEmpty { selectedTag = nil }
-                                }
-                            if !searchText.isEmpty || selectedTag != nil {
-                                Button {
+                        SearchBarView(
+                            placeholder: "Search events by name or label...",
+                            onSearch: { query in
+                                let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if trimmed.isEmpty {
                                     searchText = ""
                                     selectedTag = nil
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
+                                } else {
+                                    searchText = trimmed
+                                    selectedTag = nil
                                 }
                             }
-                        }
-                        .padding(.horizontal, 14).padding(.vertical, 11)
-                        .background(Color.white.opacity(0.85))
-                        .cornerRadius(22)
-                        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+                        )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 22)
 

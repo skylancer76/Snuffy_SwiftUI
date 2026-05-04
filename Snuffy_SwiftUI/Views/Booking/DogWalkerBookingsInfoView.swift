@@ -1,19 +1,17 @@
 //
-//  CaretakerBookingsInfoView.swift
+//  DogWalkerBookingsInfoView.swift
 //  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 19/01/26.
-//
+//  Created by Bhumika Sharma 
 
 import SwiftUI
 import Kingfisher
 import MessageUI
 
-struct CaretakerBookingsInfoView: View {
+struct DogWalkerBookingsInfoView: View {
     let booking: BookingItem
-    @StateObject private var viewModel:   CaretakerBookingsInfoViewModel
-    @StateObject private var ratingVM:    RatingViewModel
-    @StateObject private var serviceVM:   ServiceFlowViewModel
+    @StateObject private var viewModel:  DogWalkerBookingsInfoViewModel
+    @StateObject private var ratingVM:   RatingViewModel
+    @StateObject private var serviceVM:  ServiceFlowViewModel
     @Environment(\.dismiss) var dismiss
 
     @State private var showingMessageComposer = false
@@ -22,14 +20,15 @@ struct CaretakerBookingsInfoView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     private let bgColor    = Color(red: 242/255, green: 242/255, blue: 247/255)
 
+    private var req: ScheduleDogWalkerRequest? { booking.dogWalkerRequest }
     private var isCompleted: Bool { booking.dynamicStatus == .completed }
 
     init(booking: BookingItem) {
         self.booking = booking
-        _viewModel  = StateObject(wrappedValue: CaretakerBookingsInfoViewModel())
+        _viewModel  = StateObject(wrappedValue: DogWalkerBookingsInfoViewModel())
         _ratingVM   = StateObject(wrappedValue: RatingViewModel(
-            targetId:       booking.caretakerRequest?.caretakerId ?? "",
-            collectionName: "caretakers",
+            targetId:       booking.dogWalkerRequest?.dogWalkerId ?? "",
+            collectionName: "dogwalkers",
             bookingId:      booking.id
         ))
         _serviceVM  = StateObject(wrappedValue: ServiceFlowViewModel(booking: booking))
@@ -51,10 +50,10 @@ struct CaretakerBookingsInfoView: View {
                         HStack { Spacer(); ProgressView().padding(.top, 50); Spacer() }
                     } else {
 
-                        // MARK: Caretaker Information
-                        if let caretaker = viewModel.caretaker {
-                            sectionTitle("Caretaker Information")
-                            caretakerCard(caretaker)
+                        // MARK: Dog Walker Info
+                        if let walker = viewModel.dogWalker {
+                            sectionTitle("Dog Walker")
+                            dogWalkerCard(walker)
                         }
 
                         // MARK: Booking Details
@@ -62,26 +61,22 @@ struct CaretakerBookingsInfoView: View {
                         bookingDetailsCard
 
                         // MARK: Track Your Pet
-                        if let caretaker = viewModel.caretaker,
-                           let lat = caretaker.latitude, let lon = caretaker.longitude,
+                        if let walker = viewModel.dogWalker,
+                           let lat = walker.latitude, let lon = walker.longitude,
                            (lat != 0 || lon != 0) {
                             sectionTitle("Track Your Pet")
                             NavigationLink(destination: TrackPetMapView(
                                 walkerLatitude: lat,
                                 walkerLongitude: lon,
-                                walkerName: caretaker.name
+                                walkerName: walker.name
                             )) {
                                 trackPetRow
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
 
-                        // MARK: Payment Details
-                        sectionTitle("Caretaking Fees")
-                        paymentDetailsCard
-
                         // MARK: Rating (completed bookings only)
-                        if isCompleted, let caretaker = viewModel.caretaker {
+                        if isCompleted, let walker = viewModel.dogWalker {
                             sectionTitle("Your Rating")
                             if ratingVM.isChecking {
                                 HStack { Spacer(); ProgressView().tint(snuffyPink); Spacer() }
@@ -89,8 +84,14 @@ struct CaretakerBookingsInfoView: View {
                             } else if ratingVM.hasRated {
                                 ratedCard
                             } else {
-                                rateRow(name: caretaker.name)
+                                rateRow(name: walker.name)
                             }
+                        }
+
+                        // MARK: Instructions
+                        if let instructions = req?.instructions, !instructions.isEmpty {
+                            sectionTitle("Special Instructions")
+                            instructionsCard(instructions)
                         }
                     }
                 }
@@ -100,32 +101,27 @@ struct CaretakerBookingsInfoView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            if let caretakerId = booking.caretakerRequest?.caretakerId, !caretakerId.isEmpty {
-                viewModel.fetchCaretakerDetails(caretakerId: caretakerId)
+            if let walkerId = req?.dogWalkerId, !walkerId.isEmpty {
+                viewModel.fetchDogWalkerDetails(dogWalkerId: walkerId)
             } else {
                 viewModel.isLoading = false
             }
-        }
-        // Once the real document ID is resolved, update ratingVM and check existing rating
-        .onChange(of: viewModel.caretakerDocumentId) { _, docId in
-            guard let docId else { return }
-            ratingVM.setTargetDocumentId(docId)
             if isCompleted {
                 Task { await ratingVM.checkExistingRating() }
             }
         }
         .sheet(isPresented: $showingMessageComposer) {
-            if let phone = viewModel.caretaker?.phoneNumber, !phone.isEmpty,
+            if let phone = viewModel.dogWalker?.phoneNumber, !phone.isEmpty,
                MFMessageComposeViewController.canSendText() {
-                MessageComposeView(recipients: [phone], body: "Hi, I would like to chat about my booking.")
+                MessageComposeView(recipients: [phone], body: "Hi, I wanted to check on my pet's walk.")
                     .ignoresSafeArea()
             } else {
-                Text("Messaging not supported on this device.")
+                Text("Messaging is not supported on this device.").padding()
             }
         }
         .sheet(isPresented: $showRatingSheet) {
-            if let caretaker = viewModel.caretaker {
-                RatingSheetView(targetName: caretaker.name, vm: ratingVM)
+            if let walker = viewModel.dogWalker {
+                RatingSheetView(targetName: walker.name, vm: ratingVM)
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.hidden)
             }
@@ -160,52 +156,55 @@ struct CaretakerBookingsInfoView: View {
             .padding(.bottom, -4)
     }
 
-    // MARK: – Caretaker Card
+    // MARK: – Dog Walker Card
 
-    private func caretakerCard(_ caretaker: Caretakers) -> some View {
-        NavigationLink(destination: CaretakerProfileView(caretakerId: caretaker.caretakerId)) {
-            HStack(spacing: 16) {
-                if let urlStr = caretaker.profilePic, let url = URL(string: urlStr) {
-                    KFImage(url)
-                        .placeholder { Color.gray.opacity(0.3) }
-                        .resizable().scaledToFill()
-                        .frame(width: 60, height: 60).cornerRadius(12)
-                } else {
-                    Image("CaretakerPlaceholder")
-                        .resizable().scaledToFill()
-                        .frame(width: 60, height: 60)
-                        .background(Color.gray.opacity(0.3)).cornerRadius(12)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(caretaker.name)
-                        .font(.system(size: 18, weight: .bold)).foregroundColor(.black)
-                    Text(caretaker.address)
-                        .font(.system(size: 14)).foregroundColor(.gray).lineLimit(1)
-                }
-                Spacer()
-
-                HStack(spacing: 12) {
-                    if let phone = caretaker.phoneNumber, !phone.isEmpty {
-                        actionCircleButton(icon: "phone.fill") {
-                            let clean = phone.replacingOccurrences(of: " ", with: "")
-                            if let url = URL(string: "tel://\(clean)") { UIApplication.shared.open(url) }
-                        }
-                        actionCircleButton(icon: "message.fill") { showingMessageComposer = true }
-                    }
+    private func dogWalkerCard(_ walker: DogWalker) -> some View {
+        HStack(spacing: 16) {
+            if let urlStr = walker.profilePic, let url = URL(string: urlStr) {
+                KFImage(url)
+                    .placeholder { Color.gray.opacity(0.3) }
+                    .resizable().scaledToFill()
+                    .frame(width: 64, height: 64).clipShape(Circle())
+            } else {
+                ZStack {
+                    Circle().fill(snuffyPink.opacity(0.15))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 26))
+                        .foregroundColor(snuffyPink)
                 }
             }
-            .padding(16)
-            .background(Color.white).cornerRadius(20)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(walker.name)
+                    .font(.system(size: 18, weight: .bold)).foregroundColor(.black)
+                Text(walker.address)
+                    .font(.system(size: 13)).foregroundColor(.gray).lineLimit(1)
+            }
+
+            Spacer()
+
+            if let phone = walker.phoneNumber, !phone.isEmpty {
+                HStack(spacing: 10) {
+                    actionCircleButton(icon: "phone.fill") {
+                        let clean = phone.replacingOccurrences(of: " ", with: "")
+                        if let url = URL(string: "tel://\(clean)") { UIApplication.shared.open(url) }
+                    }
+                    actionCircleButton(icon: "message.fill") { showingMessageComposer = true }
+                }
+            }
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
 
     private func actionCircleButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold)).foregroundColor(.white)
-                .frame(width: 40, height: 40).background(snuffyPink).clipShape(Circle())
+                .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                .frame(width: 38, height: 38).background(snuffyPink).clipShape(Circle())
                 .shadow(color: snuffyPink.opacity(0.3), radius: 4, x: 0, y: 2)
         }
     }
@@ -214,46 +213,24 @@ struct CaretakerBookingsInfoView: View {
 
     private var bookingDetailsCard: some View {
         VStack(spacing: 0) {
-            let request = booking.caretakerRequest
             detailRow(icon: "pawprint.fill",    label: "Pet Name",   value: booking.petName)
-            Divider().padding(.leading, 44)
-            detailRow(icon: "calendar",         label: "Start Date", value: formatDate(booking.startDate))
-            Divider().padding(.leading, 44)
+            Divider().padding(.leading, 56)
+            detailRow(icon: "calendar",         label: "Date",       value: formatDate(booking.startDate))
+            Divider().padding(.leading, 56)
             detailRow(icon: "clock.fill",       label: "Start Time", value: formatTime(booking.startDate))
-            Divider().padding(.leading, 44)
-            detailRow(icon: "calendar",         label: "End Date",   value: formatDate(booking.endDate))
-            Divider().padding(.leading, 44)
+            Divider().padding(.leading, 56)
             detailRow(icon: "clock.fill",       label: "End Time",   value: formatTime(booking.endDate))
-            Divider().padding(.leading, 44)
+            Divider().padding(.leading, 56)
             detailRow(icon: "info.circle.fill", label: "Status",     value: booking.status.capitalized)
-            Divider().padding(.leading, 44)
-            HStack(alignment: .top, spacing: 16) {
-                Image(systemName: "map.fill")
-                    .foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Pickup Location").font(.system(size: 16)).foregroundColor(.black)
-                    if let req = request {
-                        let addr = shortPickupAddress(for: req)
-                        if !addr.isEmpty {
-                            Text(addr).font(.system(size: 14)).foregroundColor(.gray)
-                        }
-                    }
-                }
-                Spacer()
-            }
-            .padding(.vertical, 16).padding(.horizontal, 16)
-        }
-        .background(Color.white).cornerRadius(20)
-    }
 
-    private func detailRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon).foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
-            Text(label).font(.system(size: 16)).foregroundColor(.black)
-            Spacer()
-            Text(value).font(.system(size: 16)).foregroundColor(.gray)
+            if let address = pickupAddress, !address.isEmpty {
+                Divider().padding(.leading, 56)
+                addressRow(address)
+            }
         }
-        .padding(.vertical, 16).padding(.horizontal, 16)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
 
     // MARK: – Track Pet Row
@@ -271,19 +248,6 @@ struct CaretakerBookingsInfoView: View {
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
 
-    // MARK: – Payment Details
-
-    private var paymentDetailsCard: some View {
-        HStack(spacing: 16) {
-            Image(systemName: "indianrupeesign.circle.fill")
-                .foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
-            Text("Payment Details").font(.system(size: 16)).foregroundColor(.black)
-            Spacer()
-        }
-        .padding(.vertical, 16).padding(.horizontal, 16)
-        .background(Color.white).cornerRadius(20)
-    }
-
     // MARK: – Rating Rows
 
     private func rateRow(name: String) -> some View {
@@ -291,7 +255,7 @@ struct CaretakerBookingsInfoView: View {
             HStack(spacing: 16) {
                 Image(systemName: "star.fill")
                     .foregroundColor(snuffyPink).font(.system(size: 20)).frame(width: 24)
-                Text("Rate your caretaker")
+                Text("Rate your dog walker")
                     .font(.system(size: 16)).foregroundColor(.black)
                 Spacer()
                 Image(systemName: "chevron.right").foregroundColor(.gray).font(.system(size: 14))
@@ -317,6 +281,21 @@ struct CaretakerBookingsInfoView: View {
                 .font(.system(size: 13)).foregroundColor(.gray)
         }
         .padding(.vertical, 16).padding(.horizontal, 16)
+        .background(Color.white).cornerRadius(20)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+    }
+
+    // MARK: – Instructions
+
+    private func instructionsCard(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: "note.text")
+                .foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
+            Text(text).font(.system(size: 15)).foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
+        .padding(16)
         .background(Color.white).cornerRadius(20)
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
     }
@@ -352,7 +331,7 @@ struct CaretakerBookingsInfoView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Start Service")
                         .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
-                    Text("Tap to generate a PIN for your caretaker")
+                    Text("Tap to generate a PIN for your dog walker")
                         .font(.system(size: 12)).foregroundColor(.gray)
                 }
                 Spacer()
@@ -374,7 +353,7 @@ struct CaretakerBookingsInfoView: View {
         VStack(spacing: 16) {
             HStack(spacing: 8) {
                 Image(systemName: "key.fill").foregroundColor(snuffyPink).font(.system(size: 14))
-                Text("Share this PIN with your caretaker")
+                Text("Share this PIN with your dog walker")
                     .font(.system(size: 13)).foregroundColor(.secondary)
             }
             HStack(spacing: 12) {
@@ -393,7 +372,7 @@ struct CaretakerBookingsInfoView: View {
                     }
                 }
             }
-            Text("Waiting for caretaker to enter PIN…")
+            Text("Waiting for dog walker to enter PIN…")
                 .font(.system(size: 12)).foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity)
@@ -406,13 +385,13 @@ struct CaretakerBookingsInfoView: View {
         HStack(spacing: 16) {
             ZStack {
                 Circle().fill(snuffyPink.opacity(0.12)).frame(width: 40, height: 40)
-                Image(systemName: "pawprint.fill")
+                Image(systemName: "figure.walk")
                     .foregroundColor(snuffyPink).font(.system(size: 18))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("Service in Progress")
+                Text("Walk in Progress")
                     .font(.system(size: 16, weight: .semibold)).foregroundColor(.black)
-                Text("Your pet is with the caretaker")
+                Text("Your pet is out on a walk")
                     .font(.system(size: 12)).foregroundColor(.gray)
             }
             Spacer()
@@ -424,12 +403,37 @@ struct CaretakerBookingsInfoView: View {
 
     // MARK: – Helpers
 
-    private func shortPickupAddress(for request: ScheduleCaretakerRequest) -> String {
+    private func detailRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
+            Text(label).font(.system(size: 16)).foregroundColor(.black)
+            Spacer()
+            Text(value).font(.system(size: 15)).foregroundColor(.gray).multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 14).padding(.horizontal, 16)
+    }
+
+    private func addressRow(_ address: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: "map.fill")
+                .foregroundColor(snuffyPink).font(.system(size: 18)).frame(width: 24, alignment: .center)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Pickup Location").font(.system(size: 16)).foregroundColor(.black)
+                Text(address).font(.system(size: 14)).foregroundColor(.gray)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 14).padding(.horizontal, 16)
+    }
+
+    private var pickupAddress: String? {
+        guard let r = req else { return nil }
         var parts: [String] = []
-        if let v = request.buildingNo, !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
-        if let v = request.houseNo,    !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
-        if let v = request.landmark,   !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
-        return parts.joined(separator: ", ")
+        if let v = r.buildingNo, !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
+        if let v = r.houseNo,    !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
+        if let v = r.landmark,   !v.isEmpty { parts.append(v.trimmingCharacters(in: .whitespaces)) }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
     private func formatDate(_ date: Date) -> String {

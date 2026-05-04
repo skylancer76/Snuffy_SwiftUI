@@ -9,12 +9,16 @@ import SwiftUI
 import Combine
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseStorage
 
 class HomeViewModel: ObservableObject {
     @Published var homePets: [PetData] = []
     @Published var userInitials: String = "U"
     @Published var userName: String = ""
     @Published var userEmail: String = ""
+    @Published var profilePicURL: String? = nil
+    @Published var memberSince: String = ""
+    @Published var isUploadingProfilePic: Bool = false
     @Published var shouldNavigateToProfile = false
     @Published var shouldNavigateToPetProfile = false
     @Published var shouldNavigateToLogin = false
@@ -108,9 +112,19 @@ class HomeViewModel: ObservableObject {
                     self.userName = name
                     self.userEmail = email
                     self.userInitials = self.getInitials(from: name)
+                    self.profilePicURL = data["profilePicURL"] as? String
+                    
+                    // Parse createdAt for "Member since"
+                    if let timestamp = data["createdAt"] as? Timestamp {
+                        let date = timestamp.dateValue()
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "MMMM yyyy"
+                        self.memberSince = formatter.string(from: date)
+                    }
                 }
             } else {
-                print("User document not found or missing fields: \(error?.localizedDescription ?? "Unknown error")")
+                let errorDesc = error?.localizedDescription ?? "Unknown error"
+                print("User document not found or missing fields: \(errorDesc)")
                 DispatchQueue.main.async {
                     self.userInitials = "U"
                     self.userName = "Unknown User"
@@ -177,6 +191,47 @@ class HomeViewModel: ObservableObject {
             shouldNavigateToLogin = true
         } catch {
             print("Error signing out: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Profile Picture Upload
+    func uploadProfilePicture(_ image: UIImage) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let imageData = image.jpegData(compressionQuality: 0.6) else { return }
+
+        isUploadingProfilePic = true
+        let storageRef = Storage.storage().reference().child("user_profile_pictures/\(userId).jpg")
+
+        storageRef.putData(imageData, metadata: nil) { [weak self] _, error in
+            if let error = error {
+                print("Error uploading profile picture: \(error.localizedDescription)")
+                DispatchQueue.main.async { self?.isUploadingProfilePic = false }
+                return
+            }
+
+            storageRef.downloadURL { [weak self] url, error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Error getting download URL: \(error.localizedDescription)")
+                    DispatchQueue.main.async { self.isUploadingProfilePic = false }
+                    return
+                }
+
+                if let url = url {
+                    let urlString = url.absoluteString
+                    let db = Firestore.firestore()
+                    db.collection("users").document(userId).updateData(["profilePicURL": urlString]) { error in
+                        DispatchQueue.main.async {
+                            self.isUploadingProfilePic = false
+                            if error == nil {
+                                self.profilePicURL = urlString
+                            } else {
+                                print("Error saving profile pic URL: \(error!.localizedDescription)")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

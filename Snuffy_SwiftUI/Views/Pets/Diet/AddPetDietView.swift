@@ -19,40 +19,18 @@ struct AddPetDietView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .foregroundColor(snuffyPink)
-                
-                Spacer()
-                
-                Text("Add Diet")
-                    .font(.system(size: 18, weight: .bold))
-                
-                Spacer()
-                
-                Button("Save") {
-                    viewModel.saveDiet()
-                }
-                .foregroundColor(snuffyPink)
-                .bold()
-                .disabled(viewModel.isLoading)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
+        ZStack {
+            Color(UIColor.systemGray6)
+                .ignoresSafeArea()
             
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: 24) {
                     // Diet Details Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("DIET DETAILS")
-                            .font(.system(size: 13, weight: .medium))
+                        Text("Diet Details")
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.gray)
-                            .padding(.leading, 16)
+                            .padding(.horizontal, 20)
                         
                         VStack(spacing: 0) {
                             Menu {
@@ -67,7 +45,7 @@ struct AddPetDietView: View {
                             
                             Divider().padding(.leading, 16)
                             
-                            FormRow(label: "Food Name", value: $viewModel.foodName, placeholder: "Value")
+                            FormRow(label: "Food Name", value: $viewModel.foodName, placeholder: "e.g. Chicken & Rice")
                             
                             Divider().padding(.leading, 16)
                             
@@ -83,11 +61,11 @@ struct AddPetDietView: View {
                             
                             Divider().padding(.leading, 16)
                             
-                            FormRow(label: "Portion Size", value: $viewModel.portionSize, placeholder: "Value")
+                            FormRow(label: "Portion Size", value: $viewModel.portionSize, placeholder: "e.g. 2/3 cup")
                             
                             Divider().padding(.leading, 16)
                             
-                            FormRow(label: "Feeding Frequency", value: $viewModel.feedingFrequency, placeholder: "Value")
+                            FormRow(label: "Feeding Frequency", value: $viewModel.feedingFrequency, placeholder: "e.g. Twice daily")
                             
                             Divider().padding(.leading, 16)
                             
@@ -102,27 +80,55 @@ struct AddPetDietView: View {
                             }
                             .padding(.horizontal, 16)
                             .frame(height: 54)
+                            .background(Color.white)
                         }
-                        .background(Color.white)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                    }
-                    .padding(.top, 20)
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 40)
-            }
-            .background(Color(red: 0.98, green: 0.98, blue: 1.0))
-        }
-        .overlay {
-            if viewModel.isLoading {
-                ZStack {
-                    Color.black.opacity(0.2).ignoresSafeArea()
-                    ProgressView()
-                        .padding(20)
-                        .background(Color.white)
                         .cornerRadius(12)
+                        .padding(.horizontal, 20)
+                    }
+                    
+                    // Add Diet Button
+                    Button(action: {
+                        viewModel.saveDiet()
+                    }) {
+                        Text("Add Diet")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(snuffyPink)
+                            .cornerRadius(30)
+                    }
+                    .padding(.horizontal, 20)
+                    .disabled(viewModel.isLoading)
                 }
+                .padding(.vertical, 24)
+            }
+            
+            if viewModel.isLoading {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .progressViewStyle(CircularProgressViewStyle(tint: snuffyPink))
+            }
+        }
+        .navigationTitle("Add Diet")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
             }
         }
         .onChange(of: viewModel.isSuccess) { success in

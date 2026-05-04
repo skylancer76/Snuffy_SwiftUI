@@ -45,27 +45,23 @@ struct CaretakerOnboardingView: View {
                 loadingOverlay
                     .transition(.opacity.animation(.easeInOut(duration: 0.25)))
             }
-
-            // Navigation Bar (Back Button)
-            VStack {
-                HStack {
-                    Button(action: {
-                        vm.logout()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(snuffyPink)
-                            .padding(12)
-                            .contentShape(Rectangle())
-                    }
-                    Spacer()
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 4)
         }
-        .navigationBarHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    vm.logout()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 40, height: 40)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                }
+                .buttonStyle(.plain)
+            }
+        }
         .onAppear {
             // Triggers the native iOS location permission dialog
             vm.requestLocationPermission()
@@ -79,59 +75,23 @@ struct CaretakerOnboardingView: View {
 
     // MARK: - Ambient Background
     private var backgroundGradient: some View {
-        ZStack {
-            Color(.systemGroupedBackground)
-                .ignoresSafeArea()
-
-            Circle()
-                .fill(snuffyPink.opacity(0.14))
-                .frame(width: 400, height: 400)
-                .blur(radius: 120)
-                .offset(x: -80, y: -220)
-
-            Circle()
-                .fill(Color.purple.opacity(0.07))
-                .frame(width: 300, height: 300)
-                .blur(radius: 100)
-                .offset(x: 140, y: 80)
-
-            Circle()
-                .fill(snuffyPink.opacity(0.06))
-                .frame(width: 250, height: 250)
-                .blur(radius: 80)
-                .offset(x: -60, y: 420)
-        }
+        LinearGradient(
+            colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
         .ignoresSafeArea()
     }
 
     // MARK: - Header
     private var headerSection: some View {
         VStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 88, height: 88)
-                    .overlay {
-                        BlurView(style: .systemUltraThinMaterial)
-                            .clipShape(Circle())
-                    }
-                    .overlay(
-                        Circle().stroke(Color.white.opacity(0.5), lineWidth: 1.5)
-                    )
-                    .shadow(color: snuffyPink.opacity(0.2), radius: 25, y: 10)
-
-                Group {
-                    switch role {
-                    case .dogWalker:
-                        Image(systemName: "figure.walk.circle.fill")
-                    default:
-                        Image(systemName: "heart.circle.fill")
-                    }
-                }
-                .font(.system(size: 40, weight: .medium))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(snuffyPink)
-            }
+            Image("App Logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 88, height: 88)
+                .clipShape(Circle())
+                .shadow(color: snuffyPink.opacity(0.2), radius: 15, y: 5)
 
             VStack(spacing: 6) {
                 Text(role == .dogWalker ? "Dog Walker Profile" : "Caretaker Profile")
@@ -315,17 +275,10 @@ struct GlassSectionCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(accentColor)
-
-                Text(title.uppercased())
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .tracking(0.8)
-            }
+            Text(title.uppercased())
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.primary)
+                .tracking(0.8)
 
             content
         }
@@ -368,45 +321,43 @@ struct GlassTextField: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(isFocused || !text.isEmpty ? accentColor : .secondary)
+                .frame(width: 20)
+                .animation(.easeInOut(duration: 0.2), value: isFocused)
 
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isFocused || !text.isEmpty ? accentColor : .secondary)
-                    .frame(width: 20)
-                    .animation(.easeInOut(duration: 0.2), value: isFocused)
-
-                TextField(placeholder, text: $text)
-                    .font(.system(size: 15))
-                    .keyboardType(keyboardType)
-                    .focused($isFocused)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                ZStack {
-                    Color.white.opacity(0.3)
-                    BlurView(style: .systemThinMaterial)
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(
-                        isFocused ? accentColor.opacity(0.6) :
-                            (!text.isEmpty ? accentColor.opacity(0.3)
-                             : Color.white.opacity(0.3)),
-                        lineWidth: isFocused ? 1.5 : 1
-                    )
-            )
-            .animation(.easeInOut(duration: 0.2), value: isFocused)
-            .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
+            TextField(title, text: $text)
+                .font(.system(size: 15))
+                .keyboardType(keyboardType)
+                .focused($isFocused)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            Group {
+                if isFocused || !text.isEmpty {
+                    Color.white
+                } else {
+                    ZStack {
+                        Color.white.opacity(0.6)
+                        BlurView(style: .systemThinMaterial)
+                    }
+                }
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(
+                    isFocused || !text.isEmpty ? accentColor.opacity(0.6) : Color.white.opacity(0.4),
+                    lineWidth: isFocused || !text.isEmpty ? 1.5 : 1
+                )
+        )
+        .animation(.easeInOut(duration: 0.2), value: isFocused)
+        .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
     }
 }
 
@@ -421,54 +372,57 @@ struct GlassMultilineField: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 13))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isFocused || !text.isEmpty ? accentColor : .secondary)
-                    .animation(.easeInOut(duration: 0.2), value: isFocused)
-
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+        ZStack(alignment: .topLeading) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(isFocused || !text.isEmpty ? accentColor : .secondary)
+                .frame(width: 20)
+                .padding(.leading, 14)
+                .padding(.top, 14)
+                .animation(.easeInOut(duration: 0.2), value: isFocused)
 
             ZStack(alignment: .topLeading) {
                 if text.isEmpty {
-                    Text(placeholder)
-                        .font(.system(size: 14))
+                    Text(title)
+                        .font(.system(size: 15))
                         .foregroundStyle(Color(.placeholderText))
-                        .padding(.horizontal, 14)
+                        .padding(.leading, 44)
                         .padding(.vertical, 12)
                 }
                 TextEditor(text: $text)
-                    .font(.system(size: 14))
+                    .font(.system(size: 15))
                     .frame(minHeight: 80)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
+                    .padding(.leading, 40)
+                    .padding(.trailing, 14)
+                    .padding(.top, 4)
+                    .padding(.bottom, 12)
                     .scrollContentBackground(.hidden)
                     .focused($isFocused)
             }
-            .background(
-                ZStack {
-                    Color.white.opacity(0.3)
-                    BlurView(style: .systemThinMaterial)
-                }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(
-                        isFocused ? accentColor.opacity(0.6) :
-                            (!text.isEmpty ? accentColor.opacity(0.3)
-                             : Color.white.opacity(0.3)),
-                        lineWidth: isFocused ? 1.5 : 1
-                    )
-            )
-            .animation(.easeInOut(duration: 0.2), value: isFocused)
-            .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
         }
+        .background(
+            Group {
+                if isFocused || !text.isEmpty {
+                    Color.white
+                } else {
+                    ZStack {
+                        Color.white.opacity(0.6)
+                        BlurView(style: .systemThinMaterial)
+                    }
+                }
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(
+                    isFocused || !text.isEmpty ? accentColor.opacity(0.6) : Color.white.opacity(0.4),
+                    lineWidth: isFocused || !text.isEmpty ? 1.5 : 1
+                )
+        )
+        .animation(.easeInOut(duration: 0.2), value: isFocused)
+        .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
     }
 }
 
@@ -491,7 +445,8 @@ struct GlassPhotoSlot: View {
                 .overlay {
                     ZStack {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.ultraThinMaterial)
+                            .fill(Color.white.opacity(0.8))
+                            .shadow(color: Color.black.opacity(0.08), radius: 8, y: 3)
 
                         if let img = image {
                             Image(uiImage: img)
@@ -537,7 +492,7 @@ struct GlassPhotoSlot: View {
                         .strokeBorder(
                             image != nil
                                 ? accentColor.opacity(0.4)
-                                : Color.white.opacity(0.2),
+                                : accentColor.opacity(0.3),
                             style: StrokeStyle(
                                 lineWidth: 1.5,
                                 dash: image != nil ? [] : [6]

@@ -24,10 +24,10 @@ struct MyBookingsView: View {
                 LinearGradient(
                     colors: [
                         Color(red: 1.0, green: 0.4, blue: 0.6).opacity(0.4),
-                        Color.white
+                        Color(UIColor.systemGray6)
                     ],
                     startPoint: .top,
-                    endPoint: .bottom
+                    endPoint: .center
                 )
                 .ignoresSafeArea()
                 
@@ -248,9 +248,9 @@ struct BookingCard: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color.white.opacity(0.8))
         .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
     }
     
     // MARK: - Pet Image View
@@ -285,7 +285,8 @@ struct BookingCard: View {
     private func labelRow(label: String, value: String) -> some View {
         (Text(label).foregroundColor(.gray) + Text(" \(value)").foregroundColor(.black))
             .font(.system(size: 12))
-            .lineLimit(1)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -316,7 +317,7 @@ struct StatusBadge: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .background(backgroundColor(for: status))
-        .cornerRadius(8)
+        .cornerRadius(6)
         .fixedSize()
     }
     

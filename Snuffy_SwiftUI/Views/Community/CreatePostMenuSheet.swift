@@ -13,7 +13,11 @@ struct CreatePostMenuSheet: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
+            Color(UIColor.systemGroupedBackground)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
             // Drag indicator
             RoundedRectangle(cornerRadius: 3)
                 .fill(Color.gray.opacity(0.3))
@@ -54,7 +58,8 @@ struct CreatePostMenuSheet: View {
 
             Spacer(minLength: 20)
         }
-        .presentationDetents([.height(230)])
+        }
+        .presentationDetents([.height(260)])
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(24)
     }

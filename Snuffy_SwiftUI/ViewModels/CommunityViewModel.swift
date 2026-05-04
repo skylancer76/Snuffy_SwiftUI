@@ -22,6 +22,8 @@ class CommunityViewModel: ObservableObject {
     @Published var showCreatePost = false
     @Published var showCreateEvent = false
     @Published var selectedPostForComments: CommunityPost?
+    @Published var profilePicURL: String? = nil
+    @Published var userInitials: String = "U"
 
     // MARK: - Private
     private var postsListener: ListenerRegistration?
@@ -31,6 +33,7 @@ class CommunityViewModel: ObservableObject {
     // MARK: - Init
     init() {
         startListeners()
+        fetchUserProfile()
     }
 
     deinit {
@@ -44,6 +47,22 @@ class CommunityViewModel: ObservableObject {
         isLoading = true
         fetchPosts()
         fetchEvents()
+    }
+
+    func fetchUserProfile() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        db.collection("users").document(userId).getDocument { [weak self] document, _ in
+            guard let self = self else { return }
+            if let document = document, document.exists, let data = document.data() {
+                DispatchQueue.main.async {
+                    self.profilePicURL = data["profilePicURL"] as? String
+                    if let name = data["name"] as? String {
+                        let parts = name.split(separator: " ")
+                        self.userInitials = parts.compactMap({ $0.first }).map({ String($0) }).joined().uppercased()
+                    }
+                }
+            }
+        }
     }
 
     private func fetchPosts() {
