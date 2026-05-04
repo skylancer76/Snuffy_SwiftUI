@@ -21,84 +21,98 @@ struct PetBotView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
 
-                // MARK: - Chat messages
-                ScrollViewReader { proxy in
-                    ScrollView(showsIndicators: false) {
-                        LazyVStack(alignment: .leading, spacing: 8) {
+            // MARK: - Custom header (matches booking-info / caretaker-profile)
+            customHeader
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
 
-                            if vm.isLoadingData {
-                                loadingDataBanner
-                            }
+            // MARK: - Chat messages
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(alignment: .leading, spacing: 8) {
 
-                            ForEach(vm.messages) { msg in
-                                ChatBubbleView(message: msg, snuffyPink: snuffyPink)
-                                    .id(msg.id)
-                            }
-
-                            if vm.isThinking {
-                                TypingBubbleView(snuffyPink: snuffyPink)
-                                    .id("TYPING")
-                            }
-
-                            // Invisible anchor at bottom
-                            Color.clear.frame(height: 1).id("BOTTOM")
+                        if vm.isLoadingData {
+                            loadingDataBanner
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                        .padding(.bottom, 8)
-                    }
-                    .onChange(of: vm.messages.count) { _, _ in
-                        withAnimation(.easeOut(duration: 0.25)) {
-                            proxy.scrollTo("BOTTOM", anchor: .bottom)
+
+                        ForEach(vm.messages) { msg in
+                            ChatBubbleView(message: msg, snuffyPink: snuffyPink)
+                                .id(msg.id)
                         }
-                    }
-                    .onChange(of: vm.isThinking) { _, thinking in
-                        if thinking {
-                            withAnimation { proxy.scrollTo("TYPING", anchor: .bottom) }
+
+                        if vm.isThinking {
+                            TypingBubbleView(snuffyPink: snuffyPink)
+                                .id("TYPING")
                         }
+
+                        // Invisible anchor at bottom
+                        Color.clear.frame(height: 1).id("BOTTOM")
                     }
-                    .onAppear {
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                }
+                .onChange(of: vm.messages.count) { _, _ in
+                    withAnimation(.easeOut(duration: 0.25)) {
                         proxy.scrollTo("BOTTOM", anchor: .bottom)
                     }
                 }
-
-                // MARK: - Input bar
-                inputBar
+                .onChange(of: vm.isThinking) { _, thinking in
+                    if thinking {
+                        withAnimation { proxy.scrollTo("TYPING", anchor: .bottom) }
+                    }
+                }
+                .onAppear {
+                    proxy.scrollTo("BOTTOM", anchor: .bottom)
+                }
             }
-            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
-            .navigationTitle("Snuffy Bot")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "chevron.down.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color(uiColor: .tertiaryLabel))
-                    }
-                    .buttonStyle(.plain)
+
+            // MARK: - Input bar
+            inputBar
+        }
+        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .navigationBarHidden(true)
+    }
+
+    // MARK: - Custom header
+
+    /// Floating back chevron + centered Snuffy-Bot badge, matching the
+    /// header pattern used by BookingsInfo / CaretakerProfile screens.
+    private var customHeader: some View {
+        ZStack {
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.black)
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
                 }
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        ZStack {
-                            Circle().fill(snuffyPink).frame(width: 28, height: 28)
-                            HStack(spacing: -3) {
-                                Image(systemName: "pawprint.fill")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .rotationEffect(.degrees(-15))
-                                Image(systemName: "pawprint.fill")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .rotationEffect(.degrees(15))
-                            }
-                        }
-                        Text("Snuffy Bot")
-                            .font(.system(size: 16, weight: .semibold))
+                Spacer()
+            }
+
+            HStack(spacing: 6) {
+                ZStack {
+                    Circle().fill(snuffyPink).frame(width: 28, height: 28)
+                    HStack(spacing: -3) {
+                        Image(systemName: "pawprint.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .rotationEffect(.degrees(-15))
+                        Image(systemName: "pawprint.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .rotationEffect(.degrees(15))
                     }
                 }
+                Text("Snuffy Bot")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.black)
             }
         }
     }
@@ -240,9 +254,7 @@ struct ChatBubbleView: View {
                 }
                 // Text bubble (skip if empty)
                 if !message.text.isEmpty {
-                    Text(message.text)
-                        .font(.system(size: 15))
-                        .foregroundStyle(message.isUser ? .white : .primary)
+                    bubbleContent
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(
@@ -259,6 +271,115 @@ struct ChatBubbleView: View {
             if !message.isUser { Spacer(minLength: 48) }
         }
         .padding(.vertical, 2)
+    }
+
+    /// Render bot replies as markdown (bold/italic/code/links + bullets), and
+    /// keep user messages as plain text (we never want their input
+    /// accidentally interpreted).
+    @ViewBuilder
+    private var bubbleContent: some View {
+        if message.isUser {
+            Text(message.text)
+                .font(.system(size: 15))
+                .foregroundStyle(.white)
+        } else {
+            MarkdownMessageView(raw: message.text)
+                .font(.system(size: 15))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Markdown rendering
+
+/// Lightweight markdown renderer tuned for the chat surface.
+/// Splits the bot reply into blocks (paragraphs + bullet lists) and renders
+/// each block as an `AttributedString` so inline markdown (`**bold**`,
+/// `*italic*`, `` `code` ``, links) lights up while bullets become real
+/// bullet rows instead of literal `*` characters.
+struct MarkdownMessageView: View {
+    let raw: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .paragraph(let str):
+                    Text(attributed(str))
+                        .fixedSize(horizontal: false, vertical: true)
+                case .bulletList(let items):
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("•")
+                                Text(attributed(item))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private enum Block { case paragraph(String); case bulletList([String]) }
+
+    private var blocks: [Block] {
+        let lines = raw.replacingOccurrences(of: "\r\n", with: "\n")
+            .components(separatedBy: "\n")
+
+        var out: [Block] = []
+        var paragraphBuf: [String] = []
+        var bulletBuf: [String] = []
+
+        func flushParagraph() {
+            let joined = paragraphBuf.joined(separator: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !joined.isEmpty { out.append(.paragraph(joined)) }
+            paragraphBuf.removeAll()
+        }
+        func flushBullets() {
+            if !bulletBuf.isEmpty { out.append(.bulletList(bulletBuf)) }
+            bulletBuf.removeAll()
+        }
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty {
+                flushParagraph(); flushBullets()
+                continue
+            }
+            if let item = bulletItem(from: trimmed) {
+                flushParagraph()
+                bulletBuf.append(item)
+            } else {
+                flushBullets()
+                paragraphBuf.append(trimmed)
+            }
+        }
+        flushParagraph(); flushBullets()
+        return out
+    }
+
+    /// Strip the leading `*`/`-`/`•` bullet marker (and an optional second
+    /// `*` from `* **bold:**` patterns the model emits) and return the
+    /// remaining text. Returns `nil` if the line isn't a bullet.
+    private func bulletItem(from line: String) -> String? {
+        guard let first = line.first, "*-•".contains(first) else { return nil }
+        var rest = line.dropFirst()
+        // Require whitespace after the marker so we don't munch `**bold**`.
+        guard let next = rest.first, next == " " || next == "\t" else { return nil }
+        rest = rest.drop(while: { $0 == " " || $0 == "\t" })
+        return String(rest)
+    }
+
+    private func attributed(_ s: String) -> AttributedString {
+        var opts = AttributedString.MarkdownParsingOptions()
+        opts.interpretedSyntax = .inlineOnlyPreservingWhitespace
+        return (try? AttributedString(markdown: s, options: opts))
+            ?? AttributedString(s)
     }
 }
 

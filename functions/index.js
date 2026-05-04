@@ -1,21 +1,28 @@
 // functions/index.js
 // Authored by bhumika sharam
 //
-// Firebase Cloud Function — approveCaregiver
+// Firebase Cloud Functions for Snuffy:
+//   - approveCaregiver  (HTTP)  — admin approval flow
+//   - geminiChat        (Callable) — server-side proxy to Gemini so the API
+//                        key never ships in the iOS bundle.
 //
 // HOW TO DEPLOY:
 //   cd functions
 //   npm install
+//   firebase functions:secrets:set GEMINI_API_KEY   # paste the rotated key
 //   firebase deploy --only functions
 //
 // The approve button in the admin email hits:
 //   https://us-central1-<PROJECT_ID>.cloudfunctions.net/approveCaregiver?token=<uid>_<role>
 
-const { onRequest } = require("firebase-functions/v2/https");
-const { initializeApp }  = require("firebase-admin/app");
-const { getFirestore }   = require("firebase-admin/firestore");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore }  = require("firebase-admin/firestore");
 
 initializeApp();
+
+const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
 exports.approveCaregiver = onRequest(async (req, res) => {
     const token = (req.query.token || "").trim();
@@ -56,6 +63,80 @@ exports.approveCaregiver = onRequest(async (req, res) => {
         return res.status(500).send(errorPage(err.message));
     }
 });
+
+// ─── Gemini Proxy (callable) ─────────────────────────────────────────────────
+//
+// iOS calls this via the FirebaseFunctions SDK (`Functions.functions().httpsCallable("geminiChat")`).
+// The request body matches the Gemini `generateContent` schema, so the iOS
+// side stays close to what it sent before — only the transport changes.
+//
+// Auth is enforced: callers must be signed in with Firebase Auth.
+
+const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+
+exports.geminiChat = onCall(
+    { secrets: [GEMINI_API_KEY], region: "us-central1" },
+    async (request) => {
+        if (!request.auth || !request.auth.uid) {
+            throw new HttpsError("unauthenticated", "Sign in to use Snuffy Bot.");
+        }
+
+        const data = request.data || {};
+        const contents = data.contents;
+        const systemInstruction = data.system_instruction;
+        const generationConfig = data.generationConfig || { temperature: 0.6, maxOutputTokens: 1024 };
+        const model = data.model || GEMINI_DEFAULT_MODEL;
+
+        if (!Array.isArray(contents) || contents.length === 0) {
+            throw new HttpsError("invalid-argument", "Missing conversation contents.");
+        }
+
+        const apiKey = GEMINI_API_KEY.value();
+        if (!apiKey) {
+            throw new HttpsError("failed-precondition", "Gemini API key is not configured.");
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+        const payload = { contents, generationConfig };
+        if (systemInstruction) {
+            payload.system_instruction = systemInstruction;
+        }
+
+        let upstream;
+        try {
+            upstream = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("geminiChat fetch error:", err);
+            throw new HttpsError("unavailable", "Couldn't reach the assistant. Please try again.");
+        }
+
+        const bodyText = await upstream.text();
+        if (!upstream.ok) {
+            console.error(`geminiChat upstream ${upstream.status}: ${bodyText}`);
+            throw new HttpsError("internal", `Gemini error (${upstream.status}).`);
+        }
+
+        let parsed;
+        try {
+            parsed = JSON.parse(bodyText);
+        } catch (err) {
+            console.error("geminiChat parse error:", err, bodyText);
+            throw new HttpsError("internal", "Couldn't parse the assistant's response.");
+        }
+
+        const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+            throw new HttpsError("internal", "Empty response from the assistant.");
+        }
+
+        return { text: text.trim() };
+    }
+);
 
 // ─── HTML Responses ──────────────────────────────────────────────────────────
 
