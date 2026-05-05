@@ -49,8 +49,10 @@ class UserRoleViewModel: ObservableObject {
                 let complete = Self.profileComplete(from: data, isVerified: verified)
                 DispatchQueue.main.async {
                     self.role = .caretaker
-                    self.isVerified = verified
-                    self.isProfileComplete = complete
+                    // Monotonic merge — once true, stay true. Prevents a stub-doc listener
+                    // from clobbering good values set by the real-profile listener.
+                    self.isVerified = self.isVerified || verified
+                    self.isProfileComplete = self.isProfileComplete || complete
                     self.isLoading = false
                 }
             }
@@ -65,8 +67,8 @@ class UserRoleViewModel: ObservableObject {
                 let complete = Self.profileComplete(from: data, isVerified: verified)
                 DispatchQueue.main.async {
                     self.role = .caretaker
-                    self.isVerified = verified
-                    self.isProfileComplete = complete
+                    self.isVerified = self.isVerified || verified
+                    self.isProfileComplete = self.isProfileComplete || complete
                     self.isLoading = false
                 }
             }
@@ -82,8 +84,8 @@ class UserRoleViewModel: ObservableObject {
                 let complete = Self.profileComplete(from: data, isVerified: verified)
                 DispatchQueue.main.async {
                     self.role = .dogWalker
-                    self.isVerified = verified
-                    self.isProfileComplete = complete
+                    self.isVerified = self.isVerified || verified
+                    self.isProfileComplete = self.isProfileComplete || complete
                     self.isLoading = false
                 }
             }
@@ -98,8 +100,8 @@ class UserRoleViewModel: ObservableObject {
                 let complete = Self.profileComplete(from: data, isVerified: verified)
                 DispatchQueue.main.async {
                     self.role = .dogWalker
-                    self.isVerified = verified
-                    self.isProfileComplete = complete
+                    self.isVerified = self.isVerified || verified
+                    self.isProfileComplete = self.isProfileComplete || complete
                     self.isLoading = false
                 }
             }
@@ -129,10 +131,13 @@ class UserRoleViewModel: ObservableObject {
         // Just let the active snapshot listeners do their job
     }
 
-    // A real profile document has at least one meaningful field beyond stub fields.
+    // A real profile doc carries identity fields. Pure-stub docs (registration
+    // placeholders, cross-collection index entries) lack these and must be ignored
+    // so they don't clobber good values from the real-profile listener.
     private static func isRealProfileDoc(_ data: [String: Any]) -> Bool {
-        let stubOnlyKeys: Set<String> = ["distanceAway", "status"]
-        return data.keys.contains(where: { !stubOnlyKeys.contains($0) })
+        return data["name"] != nil
+            || data["email"] != nil
+            || data["phoneNumber"] != nil
     }
 
     // Profile is complete if:

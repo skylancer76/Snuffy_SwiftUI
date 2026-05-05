@@ -21,8 +21,12 @@ struct PetProfileView: View {
     
     var body: some View {
         ZStack(alignment: .top) {
-            snuffyPink.opacity(0.4)
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
+                startPoint: .top,
+                endPoint: .center
+            )
+            .ignoresSafeArea()
             
             if viewModel.isLoading {
                 ProgressView()
@@ -32,12 +36,14 @@ struct PetProfileView: View {
                     
                     // Custom Navigation Bar
                     HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 20, weight: .semibold))
+                        Button { dismiss() } label: {
+                            Image(systemName: "chevron.left")
                                 .foregroundColor(.black)
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 44, height: 44)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
                         }
                         
                         Spacer()
@@ -93,16 +99,11 @@ struct PetProfileView: View {
                                 
                                 // Records Section
                                 VStack(alignment: .leading, spacing: 16) {
-                                    HStack {
-                                        Text("Records")
-                                            .font(.system(size: 18, weight: .bold))
-                                            .foregroundColor(.black)
-                                        Spacer()
-                                        Text("See all")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.gray)
-                                    }
-                                    .padding(.horizontal, 24)
+                                    Text("Records")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.black)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 24)
                                     
                                     VStack(spacing: 16) {
                                         NavigationLink(destination: PetVaccinationListView(petId: petId)) {
@@ -110,7 +111,7 @@ struct PetProfileView: View {
                                                 icon: "syringe.fill",
                                                 color: Color.orange,
                                                 title: "Vaccination",
-                                                subtitle: "View history"
+                                                subtitle: "Vaccination history"
                                             )
                                         }
                                         NavigationLink(destination: PetDietListView(petId: petId)) {
@@ -126,7 +127,7 @@ struct PetProfileView: View {
                                                 icon: "pills.fill",
                                                 color: Color.blue,
                                                 title: "Medication",
-                                                subtitle: "Current prescriptions"
+                                                subtitle: "Current medications"
                                             )
                                         }
                                     }
@@ -263,7 +264,7 @@ struct RecordRow: View {
         .padding(.vertical, 12)
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 4)
     }
 }
 

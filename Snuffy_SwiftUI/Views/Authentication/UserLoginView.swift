@@ -95,7 +95,7 @@ struct UserLoginView: View {
                     }
                     .padding()
                     .background(Color.white)
-                    .cornerRadius(8)
+                    .cornerRadius(30)
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
                             .stroke(Color.gray.opacity(0.5), lineWidth: 1)
@@ -136,6 +136,7 @@ struct UserLoginView: View {
                     .padding(.top, 24)
                 }
                 .padding(.bottom, 40)
+                .readableContentWidth()
             }
             .scrollDismissesKeyboard(.interactively)
             
@@ -175,7 +176,7 @@ struct SnuffyTextFieldStyle: TextFieldStyle {
         configuration
             .padding()
             .background(Color.white)
-            .cornerRadius(8)
+            .cornerRadius(30)
             .overlay(
                 RoundedRectangle(cornerRadius: 30)
                     .stroke(

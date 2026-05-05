@@ -20,6 +20,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            UIApplication.shared.installDismissKeyboardOnTap()
             Auth.auth().addStateDidChangeListener { auth, user in
                 isLoggedIn = (user != nil)
             }
