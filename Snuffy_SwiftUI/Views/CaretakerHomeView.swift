@@ -13,8 +13,11 @@ struct CaretakerHomeView: View {
     
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
+    @State private var selectedDay = 15 // Default selected day for mock calendar
+    
     var body: some View {
         VStack(spacing: 0) {
+            // Header
             HStack {
                 Text("Home")
                     .font(.system(size: 32, weight: .bold))
@@ -40,51 +43,136 @@ struct CaretakerHomeView: View {
             .padding(.top, 16)
             .padding(.bottom, 10)
             
-            if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
-                Spacer()
-                ProgressView()
-                Spacer()
-            } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
-                Spacer()
-                VStack(spacing: 20) {
-                    Image(systemName: "tray")
-                        .font(.system(size: 60))
-                        .foregroundColor(.gray)
-                    Text("No Pending Requests")
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                }
-                Spacer()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
-                            RequestCard(
-                                petName: request.petName,
-                                ownerName: request.userName,
-                                breed: request.petBreed ?? "Breed Not Available",
-                                duration: request.duration,
-                                imageUrl: request.petImageUrl,
-                                onAccept: {
-                                    viewModel.acceptCaretakerRequest(request: request)
-                                }
-                            )
-                        }
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 30) {
+                    
+                    // 1. Banner Section
+                    Image("Home Screen Banner")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 120)
+                        .clipped()
+                        .cornerRadius(25)
+                        .padding(.horizontal, 20)
+                    
+                    // 2. Upcoming Bookings Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Upcoming Bookings")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 20)
                         
-                        ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
-                            RequestCard(
-                                petName: request.petName,
-                                ownerName: request.userName,
-                                breed: request.petBreed ?? "Breed Not Available",
-                                duration: request.duration,
-                                imageUrl: request.petImageUrl,
-                                onAccept: {
-                                    viewModel.acceptDogWalkerRequest(request: request)
+                        if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
+                            ProgressView()
+                                .padding(.vertical, 30)
+                                .frame(maxWidth: .infinity)
+                        } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "calendar.badge.exclamationmark")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.gray.opacity(0.6))
+                                Text("No Upcoming Bookings")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 30)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .padding(.horizontal, 20)
+                        } else {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
+                                        RequestCard(
+                                            petName: request.petName,
+                                            ownerName: request.userName,
+                                            breed: request.petBreed ?? "Breed Not Available",
+                                            duration: request.duration,
+                                            imageUrl: request.petImageUrl,
+                                            onAccept: {
+                                                viewModel.acceptCaretakerRequest(request: request)
+                                            }
+                                        )
+                                        .frame(width: 320)
+                                    }
+                                    
+                                    ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
+                                        RequestCard(
+                                            petName: request.petName,
+                                            ownerName: request.userName,
+                                            breed: request.petBreed ?? "Breed Not Available",
+                                            duration: request.duration,
+                                            imageUrl: request.petImageUrl,
+                                            onAccept: {
+                                                viewModel.acceptDogWalkerRequest(request: request)
+                                            }
+                                        )
+                                        .frame(width: 320)
+                                    }
                                 }
-                            )
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10) // padding to avoid shadow clipping
+                            }
                         }
                     }
-                    .padding()
+                    
+                    // 3. Calendar Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Schedule")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 20)
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(1...30, id: \.self) { day in
+                                    CalendarDayView(day: day, isSelected: day == selectedDay)
+                                        .onTapGesture {
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                selectedDay = day
+                                            }
+                                        }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                        }
+                    }
+                    
+                    // 4. Articles Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("For Caretakers")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 16) {
+                            ArticleCard(
+                                category: "WELLNESS",
+                                title: "10 Tips for Calming Anxious Pets",
+                                readTime: "4 min read",
+                                iconName: "heart.text.square.fill",
+                                iconColor: Color.orange
+                            )
+                            ArticleCard(
+                                category: "SAFETY",
+                                title: "Recognizing Signs of Heatstroke in Dogs",
+                                readTime: "6 min read",
+                                iconName: "thermometer.sun.fill",
+                                iconColor: Color.red
+                            )
+                            ArticleCard(
+                                category: "BUSINESS",
+                                title: "Perfecting the Meet & Greet",
+                                readTime: "5 min read",
+                                iconName: "hand.wave.fill",
+                                iconColor: Color.blue
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
+                    }
                 }
             }
         }
@@ -104,10 +192,6 @@ struct CaretakerHomeView: View {
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarTitle("", displayMode: .inline)
         .fullScreenCover(isPresented: $viewModel.shouldNavigateToProfile) {
-            // Need a shim for HomeViewModel if UserProfileView strictly requires it.
-            // Let's create a proxy HomeViewModel or modify UserProfileView.
-            // Actually, UserProfileView uses HomeViewModel for logout and initials.
-            // I'll create a compat view.
             ProfileCompatibilityView(caretakerVM: viewModel)
         }
         .alert(item: Binding<AlertError?>(
@@ -122,6 +206,82 @@ struct CaretakerHomeView: View {
 struct AlertError: Identifiable {
     let id = UUID()
     let message: String
+}
+
+struct CalendarDayView: View {
+    let day: Int
+    let isSelected: Bool
+    
+    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(dayOfWeek(day: day))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(isSelected ? .white : .gray)
+            
+            Text("\(day)")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(isSelected ? .white : .black)
+            
+            // Mock busy/free dot
+            Circle()
+                .fill(isSelected ? .white : (day % 3 == 0 ? snuffyPink : Color.clear))
+                .frame(width: 4, height: 4)
+        }
+        .frame(width: 50, height: 75)
+        .background(isSelected ? snuffyPink : Color.white)
+        .cornerRadius(20)
+        .shadow(color: isSelected ? snuffyPink.opacity(0.4) : Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+    }
+    
+    private func dayOfWeek(day: Int) -> String {
+        let days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        return days[(day - 1) % 7]
+    }
+}
+
+struct ArticleCard: View {
+    let category: String
+    let title: String
+    let readTime: String
+    let iconName: String
+    let iconColor: Color
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 70, height: 70)
+                
+                Image(systemName: iconName)
+                    .font(.system(size: 28))
+                    .foregroundColor(iconColor)
+            }
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text(category)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(iconColor)
+                    .tracking(1)
+                
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.black)
+                    .lineLimit(2)
+                
+                Text(readTime)
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
+    }
 }
 
 struct RequestCard: View {

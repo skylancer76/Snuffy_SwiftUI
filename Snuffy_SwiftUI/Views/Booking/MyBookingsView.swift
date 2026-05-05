@@ -281,12 +281,11 @@ struct BookingCard: View {
     }
     
     // MARK: - Helpers
-    @ViewBuilder
     private func labelRow(label: String, value: String) -> some View {
         (Text(label).foregroundColor(.gray) + Text(" \(value)").foregroundColor(.black))
             .font(.system(size: 12))
-            .lineLimit(nil)
-            .fixedSize(horizontal: false, vertical: true)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
     
     private func formatDate(_ date: Date) -> String {

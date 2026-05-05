@@ -89,6 +89,23 @@ struct CaregiverPetProfileView: View {
     }
 }
 
+struct InfoItem: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.black)
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 // MARK: - Read-only Vaccination List + Detail
 struct CaregiverVaccinationListView: View {
     let petId: String
