@@ -82,7 +82,7 @@ struct AddPetMedicationView: View {
                                     .font(.system(size: 16))
                                     .foregroundColor(.gray)
                                 Spacer()
-                                DatePicker("", selection: $viewModel.endDate, displayedComponents: .date)
+                                DatePicker("", selection: $viewModel.endDate, in: viewModel.startDate..., displayedComponents: .date)
                                     .labelsHidden()
                                     .accentColor(snuffyPink)
                             }

@@ -877,7 +877,163 @@ class FirebaseManager {
             }
         }
     }
-    
+
+    // MARK: - Reject + Reassign
+
+    /// Caretaker rejects a scheduleRequest. Reassigns to the next-best caretaker
+    /// (excluding the rejecting one). If no candidates remain, the request is left
+    /// with status="rejected" and the caretakerId cleared.
+    func rejectAndReassignCaretakerRequest(rejectingCaretakerId: String,
+                                           requestId: String,
+                                           completion: @escaping (Error?) -> Void) {
+        let requestRef = db.collection("scheduleRequests").document(requestId)
+        requestRef.getDocument { [weak self] snap, err in
+            guard let self = self else { return }
+            if let err = err { completion(err); return }
+            guard let data = snap?.data() else {
+                completion(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Request not found"]))
+                return
+            }
+            let userLoc = Self.parseLocation(from: data)
+
+            self.findNextCaretaker(excludingId: rejectingCaretakerId, userLocation: userLoc) { result in
+                switch result {
+                case .success(let (nextRef, next)):
+                    requestRef.updateData([
+                        "caretakerId": next.caretakerId,
+                        "status": "pending"
+                    ]) { err in
+                        if let err = err { completion(err); return }
+                        nextRef.updateData([
+                            "pendingRequests": FieldValue.arrayUnion([requestId])
+                        ]) { completion($0) }
+                    }
+                case .failure:
+                    requestRef.updateData([
+                        "status": "rejected",
+                        "caretakerId": ""
+                    ]) { completion($0) }
+                }
+            }
+        }
+    }
+
+    /// DogWalker rejects a dogWalkerRequest. Same pattern as caretaker reject.
+    func rejectAndReassignDogWalkerRequest(rejectingDogWalkerId: String,
+                                           requestId: String,
+                                           completion: @escaping (Error?) -> Void) {
+        let requestRef = db.collection("dogWalkerRequests").document(requestId)
+        requestRef.getDocument { [weak self] snap, err in
+            guard let self = self else { return }
+            if let err = err { completion(err); return }
+            guard let data = snap?.data() else {
+                completion(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Request not found"]))
+                return
+            }
+            let userLoc = Self.parseLocation(from: data)
+
+            self.findNextDogWalker(excludingId: rejectingDogWalkerId, userLocation: userLoc) { result in
+                switch result {
+                case .success(let (nextRef, next)):
+                    requestRef.updateData([
+                        "dogWalkerId": next.dogWalkerId,
+                        "status": "pending"
+                    ]) { err in
+                        if let err = err { completion(err); return }
+                        nextRef.updateData([
+                            "pendingRequests": FieldValue.arrayUnion([requestId])
+                        ]) { completion($0) }
+                    }
+                case .failure:
+                    requestRef.updateData([
+                        "status": "rejected",
+                        "dogWalkerId": ""
+                    ]) { completion($0) }
+                }
+            }
+        }
+    }
+
+    private func findNextCaretaker(excludingId: String,
+                                   userLocation: CLLocation?,
+                                   completion: @escaping (Result<(DocumentReference, Caretakers), Error>) -> Void) {
+        db.collection("caretakers")
+            .whereField("status", isEqualTo: "available")
+            .getDocuments { snap, err in
+                if let err = err { completion(.failure(err)); return }
+                let docs = (snap?.documents ?? []).filter { ($0.data()["caretakerId"] as? String) != excludingId }
+                let scored = docs.compactMap { doc -> (DocumentReference, Caretakers, Double)? in
+                    let data = doc.data()
+                    guard let ct = try? Firestore.Decoder().decode(Caretakers.self, from: data) else { return nil }
+                    let score: Double = {
+                        if let userLoc = userLocation, let ctLoc = Self.parseLocation(from: data) {
+                            let km = max(userLoc.distance(from: ctLoc) / 1000.0, 0.001)
+                            return Double(ct.experience) / km
+                        }
+                        // Fall back to the cached distanceAway field used elsewhere in the app.
+                        let cached = max(ct.distanceAway, 0.001)
+                        return Double(ct.experience) / cached
+                    }()
+                    return (doc.reference, ct, score)
+                }.sorted { $0.2 > $1.2 }
+                guard let top = scored.first else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No more caretakers available"])))
+                    return
+                }
+                completion(.success((top.0, top.1)))
+            }
+    }
+
+    private func findNextDogWalker(excludingId: String,
+                                   userLocation: CLLocation?,
+                                   completion: @escaping (Result<(DocumentReference, DogWalker), Error>) -> Void) {
+        db.collection("dogwalkers")
+            .whereField("status", isEqualTo: "available")
+            .getDocuments { snap, err in
+                if let err = err { completion(.failure(err)); return }
+                let docs = (snap?.documents ?? []).filter { ($0.data()["dogWalkerId"] as? String) != excludingId }
+                let scored = docs.compactMap { doc -> (DocumentReference, DogWalker, Double)? in
+                    let data = doc.data()
+                    guard let dw = try? Firestore.Decoder().decode(DogWalker.self, from: data) else { return nil }
+                    let rating = Double(dw.rating ?? "4.0") ?? 4.0
+                    let ratingScore = rating / 5.0
+                    let distanceScore: Double = {
+                        if let userLoc = userLocation, let dwLoc = Self.parseLocation(from: data) {
+                            return 1.0 / (userLoc.distance(from: dwLoc) + 1.0)
+                        }
+                        return 0.0
+                    }()
+                    let combined = (distanceScore * 0.7) + (ratingScore * 0.3)
+                    return (doc.reference, dw, combined)
+                }.sorted { $0.2 > $1.2 }
+                guard let top = scored.first else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No more dog walkers available"])))
+                    return
+                }
+                completion(.success((top.0, top.1)))
+            }
+    }
+
+    /// Parse a CLLocation out of a Firestore doc that may store location as a
+    /// GeoPoint, a [lat,lon] map, or a [lat,lon] array.
+    private static func parseLocation(from data: [String: Any]) -> CLLocation? {
+        if let geo = data["location"] as? GeoPoint {
+            return CLLocation(latitude: geo.latitude, longitude: geo.longitude)
+        }
+        if let map = data["location"] as? [String: Any],
+           let lat = map["latitude"] as? Double,
+           let lon = map["longitude"] as? Double {
+            return CLLocation(latitude: lat, longitude: lon)
+        }
+        if let arr = data["location"] as? [Double], arr.count >= 2 {
+            return CLLocation(latitude: arr[0], longitude: arr[1])
+        }
+        if let lat = data["latitude"] as? Double, let lon = data["longitude"] as? Double {
+            return CLLocation(latitude: lat, longitude: lon)
+        }
+        return nil
+    }
+
     // MARK: - Vaccination Functions
 
     func saveVaccinationData(petId: String, vaccination: VaccinationDetails, completion: @escaping (Error?) -> Void) {
