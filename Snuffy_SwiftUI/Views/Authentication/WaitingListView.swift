@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import FirebaseAuth
 
 struct WaitingListView: View {
 
@@ -27,6 +28,24 @@ struct WaitingListView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
+                // Back Button
+                HStack {
+                    Button(action: {
+                        try? Auth.auth().signOut()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.black)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                
                 Spacer()
 
                 // Paw animation

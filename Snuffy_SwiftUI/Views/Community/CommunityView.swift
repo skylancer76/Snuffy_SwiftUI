@@ -89,25 +89,30 @@ struct CommunityView: View {
 
                         // MARK: - Events
                         if !viewModel.events.isEmpty {
-                            sectionHeader("Events")
-
-                            // Tag filter pills
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    tagPill("All", isSelected: selectedTag == nil && searchText.isEmpty) {
+                            HStack {
+                                Text("Events")
+                                    .font(.system(size: 26, weight: .bold))
+                                    .foregroundColor(.black)
+                                Spacer()
+                                Menu {
+                                    Button("All") {
                                         selectedTag = nil
-                                        searchText  = ""
+                                        searchText = ""
                                     }
                                     ForEach(availableTags, id: \.self) { tag in
-                                        tagPill(tag, isSelected: selectedTag == tag) {
+                                        Button(tag) {
                                             selectedTag = tag
-                                            searchText  = ""
+                                            searchText = ""
                                         }
                                     }
+                                } label: {
+                                    Image(systemName: "line.3.horizontal.decrease.circle")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(snuffyPink)
                                 }
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 4)
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 16)
 
                             if filteredEvents.isEmpty {
                                 HStack {
@@ -245,8 +250,8 @@ struct EventCard: View {
     let event: CommunityEvent
     let snuffyPink: Color
 
-    private let cardWidth: CGFloat = 180
-    private let imageHeight: CGFloat = 140
+    private let cardWidth: CGFloat = 300
+    private let imageHeight: CGFloat = 260
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -269,9 +274,9 @@ struct EventCard: View {
             .clipped()
 
             // Text panel below, same shape as PetCardView
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(event.title)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.black)
                     .lineLimit(1)
 
@@ -280,8 +285,8 @@ struct EventCard: View {
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.white)
         }
@@ -299,11 +304,10 @@ struct EventCard: View {
         }
     }
 
-    /// "Date • Day" only — time intentionally dropped so the card matches
-    /// PetCardView's compact two-line layout.
+    /// "Date • Day • Time" matches the user's reference image for large cards.
     private func formattedDateDay(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMM yyyy • EEEE"
+        formatter.dateFormat = "dd MMMM, yyyy • EEEE • hh:mma"
         return formatter.string(from: date)
     }
 }

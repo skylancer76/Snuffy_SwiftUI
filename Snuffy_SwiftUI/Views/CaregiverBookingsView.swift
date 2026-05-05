@@ -27,7 +27,7 @@ struct CaregiverBookingsView: View {
                 .frame(maxHeight: .infinity, alignment: .top)
                 .ignoresSafeArea()
 
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 24) {
 
                     // Title
                     Text("My Bookings")
@@ -35,7 +35,6 @@ struct CaregiverBookingsView: View {
                         .foregroundColor(.black)
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
-                        .padding(.bottom, 16)
 
                     // Segmented control — Upcoming / Completed
                     HStack(spacing: 0) {
@@ -44,50 +43,52 @@ struct CaregiverBookingsView: View {
                     }
                     .padding(4)
                     .background(
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Capsule().fill(snuffyPink.opacity(0.08)))
+                        ZStack {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                            Capsule()
+                                .fill(snuffyPink.opacity(0.10))
+                            Capsule()
+                                .strokeBorder(Color.white.opacity(0.55), lineWidth: 1)
+                        }
                     )
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
 
                     // List
-                    if viewModel.isLoading {
-                        Spacer()
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                        Spacer()
-                    } else {
-                        let items = selectedTab == 0 ? viewModel.upcomingBookings : viewModel.completedBookings
-                        if items.isEmpty {
-                            Spacer()
-                            VStack(spacing: 12) {
-                                Image(systemName: "tray")
-                                    .font(.system(size: 50))
-                                    .foregroundColor(.gray.opacity(0.5))
-                                Text("No \(selectedTab == 0 ? "upcoming" : "completed") bookings")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                            }
-                            .frame(maxWidth: .infinity)
-                            Spacer()
+                    ScrollView {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 40)
                         } else {
-                            ScrollView {
-                                LazyVStack(spacing: 16) {
+                            let items = selectedTab == 0 ? viewModel.upcomingBookings : viewModel.completedBookings
+                            if items.isEmpty {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "tray")
+                                        .font(.system(size: 50))
+                                        .foregroundColor(.gray.opacity(0.5))
+                                    Text("No \(selectedTab == 0 ? "upcoming" : "completed") bookings")
+                                        .font(.headline)
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 60)
+                            } else {
+                                LazyVStack(spacing: 20) {
                                     ForEach(items) { booking in
                                         let bookingItem = convertToBookingItem(booking)
-                                        NavigationLink(destination: destinationView(for: bookingItem)) {
-                                            CaregiverBookingCard(booking: booking)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
+                                        CaregiverBookingCard(booking: booking, bookingItem: bookingItem)
                                     }
                                 }
                                 .padding(.horizontal, 16)
+                                .padding(.top, 10)
                                 .padding(.bottom, 100)
                             }
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -136,53 +137,92 @@ struct CaregiverBookingsView: View {
             dogWalkerRequest: item.dogWalkerRequest
         )
     }
-
-    @ViewBuilder
-    private func destinationView(for item: BookingItem) -> some View {
-        // Caregiver always sees their booking details (caregiver POV: pet parent, pet details, etc.)
-        CaregiverBookingDetailsView(booking: item)
-    }
 }
 
 // MARK: - Booking Card
 struct CaregiverBookingCard: View {
     let booking: CaregiverBookingItem
+    let bookingItem: BookingItem
 
-    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    private let snuffyPink    = Color(red: 1.0, green: 0.4, blue: 0.6)
+    private let petCircleFill = Color(red: 255/255, green: 214/255, blue: 230/255)
+    private let imageSize: CGFloat = 75
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Pet image
-            petImageView
-                .frame(width: 90, height: 90)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(booking.petName)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.black)
-
-                Text(booking.ownerName)
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
-
-                Text(booking.petBreed)
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
-
-                Text(booking.durationLabel)
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
-                    .lineLimit(2)
-
+        VStack(alignment: .leading, spacing: 16) {
+            // TOP SECTION
+            HStack(alignment: .top, spacing: 12) {
+                // Image
+                ZStack {
+                    Circle()
+                        .fill(petCircleFill)
+                        .frame(width: imageSize, height: imageSize)
+                        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
+                    
+                    petImageView
+                        .frame(width: imageSize, height: imageSize)
+                        .clipShape(Circle())
+                }
+                
+                // Info
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(booking.petName)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.black)
+                    
+                    if let start = booking.caretakerRequest?.startDate ?? booking.dogWalkerRequest?.startTime {
+                        dateRow(label: "Start:", date: start)
+                    }
+                    if let end = booking.caretakerRequest?.endDate ?? booking.dogWalkerRequest?.endTime {
+                        dateRow(label: "End:", date: end)
+                    }
+                }
+                
+                Spacer(minLength: 4)
+                
                 statusBadge
-                    .padding(.top, 4)
+            }
+            
+            // BOTTOM BUTTONS
+            HStack(spacing: 12) {
+                NavigationLink(destination: CaregiverPetProfileView(petId: booking.petId ?? "")) {
+                    Text("Pet Profile")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(snuffyPink)
+                        .cornerRadius(25)
+                }
+                
+                NavigationLink(destination: CaregiverBookingDetailsView(booking: bookingItem)) {
+                    Text("View Details")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(white: 0.2))
+                        .cornerRadius(25)
+                }
             }
         }
         .padding(16)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 3)
+        .background(Color.white.opacity(0.8))
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
+    }
+
+    private func dateRow(label: String, date: Date) -> some View {
+        (Text(label).foregroundColor(.gray) + Text(" \(formatDate(date))").foregroundColor(.black))
+            .font(.system(size: 12))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd MMM yyyy"
+        return formatter.string(from: date)
     }
 
     @ViewBuilder
@@ -190,34 +230,52 @@ struct CaregiverBookingCard: View {
         if let urlStr = booking.petImageUrl, !urlStr.isEmpty, let url = URL(string: urlStr) {
             KFImage(url)
                 .placeholder {
-                    Image("DogPlaceholder")
-                        .resizable()
-                        .scaledToFill()
+                    ZStack {
+                        Circle().fill(petCircleFill)
+                        ProgressView().scaleEffect(0.7)
+                    }
                 }
                 .resizable()
                 .scaledToFill()
         } else {
-            Image("DogPlaceholder")
-                .resizable()
-                .scaledToFill()
+            Image(systemName: "dog.fill")
+                .font(.system(size: 24))
+                .foregroundColor(snuffyPink)
         }
     }
 
     private var statusBadge: some View {
-        Text(booking.displayStatus)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(statusColor)
-            .cornerRadius(8)
+        HStack(spacing: 3) {
+            let s = booking.status.lowercased()
+            if s == "completed" || s == "accepted" {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 11, weight: .semibold))
+            } else if s == "ongoing" {
+                Image(systemName: "record.circle")
+                    .font(.system(size: 11, weight: .semibold))
+            } else if s == "rejected" {
+                Image(systemName: "xmark.circle")
+                    .font(.system(size: 11, weight: .semibold))
+            } else {
+                Image(systemName: "clock")
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            Text(booking.displayStatus)
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(statusColor)
+        .cornerRadius(6)
+        .fixedSize()
     }
 
     private var statusColor: Color {
         switch booking.status.lowercased() {
         case "accepted":  return .blue
-        case "ongoing":   return snuffyPink
-        case "completed": return .green
+        case "ongoing":   return .pink
+        case "completed": return Color(red: 0.15, green: 0.78, blue: 0.35) // nice green
         case "rejected":  return .red
         default:          return .orange
         }

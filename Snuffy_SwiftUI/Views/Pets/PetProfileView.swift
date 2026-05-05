@@ -21,114 +21,127 @@ struct PetProfileView: View {
     
     var body: some View {
         ZStack(alignment: .top) {
-            LinearGradient(
-                colors: [snuffyPink.opacity(0.4), Color.white, Color.white],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            snuffyPink.opacity(0.4)
+                .ignoresSafeArea()
             
             if viewModel.isLoading {
                 ProgressView()
                     .frame(maxHeight: .infinity)
             } else if let pet = viewModel.pet {
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 32) {
-                        
-                        // Spacer for custom nav bar
-                        Spacer().frame(height: 60)
-                        
-                        // Pet Image
-                        PetProfileImageView(imageUrl: pet.petImage)
-                            .frame(width: 280, height: 280)
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.35), radius: 25, x: 0, y: 15)
-                        
-                        // Name & Breed
-                        VStack(spacing: 8) {
-                            Text(pet.petName ?? "Unknown")
-                                .font(.system(size: 34, weight: .bold))
+                VStack(spacing: 0) {
+                    
+                    // Custom Navigation Bar
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.black)
-                            
-                            Text(pet.petBreed ?? "Unknown")
-                                .font(.system(size: 20))
-                                .foregroundColor(.gray)
                         }
                         
-                        // Info Box (Glassmorphic)
-                        HStack(spacing: 0) {
-                            InfoItem(title: "Weight", value: pet.petWeight ?? "Unknown")
-                            InfoItem(title: "Gender", value: pet.petGender ?? "Unknown")
-                            InfoItem(title: "Age", value: pet.petAge ?? "Unknown")
-                        }
-                        .padding(.vertical, 24)
-                        .background(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 30)
-                                    .fill(snuffyPink.opacity(0.25))
-                                RoundedRectangle(cornerRadius: 30)
-                                    .stroke(Color.white.opacity(0.8), lineWidth: 1.5)
-                            }
-                            .shadow(color: snuffyPink.opacity(0.3), radius: 15, x: 0, y: 8)
-                        )
-                        .padding(.horizontal, 24)
+                        Spacer()
                         
-                        // Three Action Circles
-                        HStack {
-                            NavigationLink(destination: PetVaccinationListView(petId: petId)) {
-                                CircleActionItem(title: "Vaccination", icon: "syringe.fill")
+                        Menu {
+                            Button(role: .destructive) {
+                                viewModel.shouldShowDeleteAlert = true
+                            } label: {
+                                Label("Delete Pet", systemImage: "trash")
                             }
-                            Spacer()
-                            NavigationLink(destination: PetDietListView(petId: petId)) {
-                                CircleActionItem(title: "Diet", icon: "fork.knife")
-                            }
-                            Spacer()
-                            NavigationLink(destination: PetMedicationListView(petId: petId)) {
-                                CircleActionItem(title: "Medication", icon: "pills.fill")
-                            }
-                        }
-                        .padding(.horizontal, 40)
-                        .padding(.top, 16)
-                        
-                        Spacer().frame(height: 40)
-                    }
-                }
-                .ignoresSafeArea(edges: .bottom)
-                
-                // Custom Navigation Bar Overlay
-                HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.black)
-                            .frame(width: 44, height: 44)
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    }
-                    
-                    Spacer()
-                    
-                    Menu {
-                        Button(role: .destructive) {
-                            viewModel.shouldShowDeleteAlert = true
                         } label: {
-                            Label("Delete Pet", systemImage: "trash")
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.black)
                         }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(snuffyPink)
-                            .frame(width: 44, height: 44)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 10)
+                    
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            
+                            // Pet Image Area
+                            PetProfileImageView(imageUrl: pet.petImage)
+                                .frame(width: 200, height: 200)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: 10)
+                                .padding(.top, 20)
+                                .padding(.bottom, 30)
+                            
+                            // Bottom White Sheet
+                            VStack(spacing: 24) {
+                                
+                                // Name & Breed
+                                VStack(spacing: 4) {
+                                    Text(pet.petName ?? "Unknown")
+                                        .font(.system(size: 28, weight: .bold))
+                                        .foregroundColor(.black)
+                                    
+                                    Text(pet.petBreed ?? "Unknown")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(.top, 32)
+                                
+                                // Info Box (Three Cards)
+                                HStack(spacing: 12) {
+                                    AttributeCard(title: "Age", value: pet.petAge ?? "Unknown")
+                                    AttributeCard(title: "Weight", value: pet.petWeight ?? "Unknown")
+                                    AttributeCard(title: "Sex", value: pet.petGender ?? "Unknown")
+                                }
+                                .padding(.horizontal, 24)
+                                
+                                // Records Section
+                                VStack(alignment: .leading, spacing: 16) {
+                                    HStack {
+                                        Text("Records")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.black)
+                                        Spacer()
+                                        Text("See all")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(.horizontal, 24)
+                                    
+                                    VStack(spacing: 16) {
+                                        NavigationLink(destination: PetVaccinationListView(petId: petId)) {
+                                            RecordRow(
+                                                icon: "syringe.fill",
+                                                color: Color.orange,
+                                                title: "Vaccination",
+                                                subtitle: "View history"
+                                            )
+                                        }
+                                        NavigationLink(destination: PetDietListView(petId: petId)) {
+                                            RecordRow(
+                                                icon: "fork.knife",
+                                                color: Color.purple,
+                                                title: "Diet",
+                                                subtitle: "Meal plan & schedules"
+                                            )
+                                        }
+                                        NavigationLink(destination: PetMedicationListView(petId: petId)) {
+                                            RecordRow(
+                                                icon: "pills.fill",
+                                                color: Color.blue,
+                                                title: "Medication",
+                                                subtitle: "Current prescriptions"
+                                            )
+                                        }
+                                    }
+                                    .padding(.horizontal, 24)
+                                }
+                                .padding(.top, 16)
+                                
+                                Spacer().frame(height: 80)
+                            }
+                            .frame(maxWidth: .infinity)
                             .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            .clipShape(RoundedCorner(radius: 40, corners: [.topLeft, .topRight]))
+                        }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
             }
         }
         .navigationBarHidden(true)
@@ -192,50 +205,65 @@ struct PetProfileImageView: View {
     }
 }
 
-struct InfoItem: View {
+struct AttributeCard: View {
     let title: String
     let value: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.black)
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.gray)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-struct CircleActionItem: View {
-    let title: String
-    let icon: String
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
+            Text(value)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.black)
+            Text(title)
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(snuffyPink.opacity(0.1))
+        .cornerRadius(16)
+    }
+}
+
+struct RecordRow: View {
+    let icon: String
+    let color: Color
+    let title: String
+    let subtitle: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
             ZStack {
-                Circle()
-                    .fill(snuffyPink.opacity(0.25))
-                    .clipShape(Circle())
-                    .frame(width: 80, height: 80)
-                    .shadow(color: snuffyPink.opacity(0.3), radius: 12, x: 0, y: 6)
-                
-                Circle()
-                    .stroke(Color.white.opacity(0.8), lineWidth: 1.5)
-                    .frame(width: 80, height: 80)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color)
+                    .frame(width: 50, height: 50)
                 
                 Image(systemName: icon)
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundColor(snuffyPink)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white)
             }
             
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.black)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.black)
+                Text(subtitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(Color.gray.opacity(0.4))
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }
 

@@ -52,14 +52,9 @@ struct CaretakerOnboardingView: View {
                     vm.logout()
                 }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.black)
-                        .frame(width: 40, height: 40)
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
                 }
-                .buttonStyle(.plain)
             }
         }
         .onAppear {
