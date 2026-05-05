@@ -108,7 +108,7 @@ struct UserSignUpView: View {
                     }
                     .padding()
                     .background(Color.white)
-                    .cornerRadius(8)
+                    .cornerRadius(30)
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
                             .stroke(Color.gray.opacity(0.5), lineWidth: 1)
@@ -162,6 +162,7 @@ struct UserSignUpView: View {
                     .disabled(viewModel.isLoading)
                 }
                 .padding(.bottom, 40)
+                .readableContentWidth()
             }
             .scrollDismissesKeyboard(.interactively)
             
