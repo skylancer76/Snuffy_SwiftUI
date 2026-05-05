@@ -95,7 +95,7 @@ class CaretakerHomeViewModel: ObservableObject {
     
     func acceptDogWalkerRequest(request: ScheduleDogWalkerRequest) {
         guard let dogWalkerId = self.dogWalkerId else { return }
-        
+
         FirebaseManager.shared.acceptDogWalkerRequest(dogWalkerId: dogWalkerId, requestId: request.requestId) { [weak self] error in
             if let error = error {
                 self?.errorMessage = error.localizedDescription
@@ -103,6 +103,91 @@ class CaretakerHomeViewModel: ObservableObject {
                 self?.dogWalkerRequests.removeAll { $0.requestId == request.requestId }
             }
         }
+    }
+
+    func rejectCaretakerRequest(request: ScheduleCaretakerRequest) {
+        guard let rejectingId = self.caretakerId else { return }
+        FirebaseManager.shared.rejectAndReassignCaretakerRequest(
+            rejectingCaretakerId: rejectingId,
+            requestId: request.requestId
+        ) { [weak self] error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.errorMessage = error.localizedDescription
+                } else {
+                    self?.scheduleRequests.removeAll { $0.requestId == request.requestId }
+                }
+            }
+        }
+    }
+
+    func rejectDogWalkerRequest(request: ScheduleDogWalkerRequest) {
+        guard let rejectingId = self.dogWalkerId else { return }
+        FirebaseManager.shared.rejectAndReassignDogWalkerRequest(
+            rejectingDogWalkerId: rejectingId,
+            requestId: request.requestId
+        ) { [weak self] error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.errorMessage = error.localizedDescription
+                } else {
+                    self?.dogWalkerRequests.removeAll { $0.requestId == request.requestId }
+                }
+            }
+        }
+    }
+
+    // MARK: - Bookings grouped by calendar day (for monthly schedule view)
+    struct BookingDay: Identifiable {
+        let id: String
+        let petName: String
+        let ownerName: String
+        let petImageUrl: String?
+        let timeLabel: String
+        let isDogWalker: Bool
+    }
+
+    var bookingsByDate: [Date: [BookingDay]] {
+        var map: [Date: [BookingDay]] = [:]
+        let cal = Calendar.current
+        let timeFmt: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "h:mm a"
+            return f
+        }()
+
+        for r in scheduleRequests {
+            guard let start = r.startDate, let end = r.endDate else { continue }
+            let item = BookingDay(
+                id: r.requestId,
+                petName: r.petName,
+                ownerName: r.userName,
+                petImageUrl: r.petImageUrl,
+                timeLabel: "\(timeFmt.string(from: start)) – \(timeFmt.string(from: end))",
+                isDogWalker: false
+            )
+            // A caretaker booking can span multiple days; mark every day in the range.
+            var d = cal.startOfDay(for: start)
+            let last = cal.startOfDay(for: end)
+            while d <= last {
+                map[d, default: []].append(item)
+                guard let next = cal.date(byAdding: .day, value: 1, to: d) else { break }
+                d = next
+            }
+        }
+        for r in dogWalkerRequests {
+            let day = cal.startOfDay(for: r.date)
+            let item = BookingDay(
+                id: r.requestId,
+                petName: r.petName,
+                ownerName: r.userName,
+                petImageUrl: r.petImageUrl,
+                timeLabel: "\(timeFmt.string(from: r.startTime)) – \(timeFmt.string(from: r.endTime))",
+                isDogWalker: true
+            )
+            map[day, default: []].append(item)
+        }
+        return map
     }
     
     // MARK: - Profile & Auth

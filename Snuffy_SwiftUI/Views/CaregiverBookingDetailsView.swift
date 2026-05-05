@@ -212,11 +212,10 @@ struct CaregiverBookingDetailsView: View {
     // MARK: – Booking Details Card (mirrors snuffy-main caretaker booking info cells)
     private var bookingDetailsCard: some View {
         VStack(spacing: 0) {
-            // Pet Parent (owner's name)
+            // Pet Parent (owner's name) — pet identity lives in the dedicated
+            // "Pet Details" section below, so we don't duplicate the pet name here.
             let ownerName = caretakerReq?.userName ?? dogWalkerReq?.userName ?? "–"
             detailRow(icon: "person.fill",       label: "Pet Parent",   value: ownerName)
-            Divider().padding(.leading, 56)
-            detailRow(icon: "pawprint.fill",     label: "Pet Name",     value: booking.petName)
             Divider().padding(.leading, 56)
 
             if booking.type == .caretaker {

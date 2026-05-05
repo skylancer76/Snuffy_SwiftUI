@@ -91,7 +91,7 @@ struct AddPetVaccinationView: View {
                                         .font(.system(size: 16))
                                         .foregroundColor(.gray)
                                     Spacer()
-                                    DatePicker("", selection: $viewModel.expiryDate, displayedComponents: .date)
+                                    DatePicker("", selection: $viewModel.expiryDate, in: Date()..., displayedComponents: .date)
                                         .labelsHidden()
                                         .accentColor(snuffyPink)
                                 }

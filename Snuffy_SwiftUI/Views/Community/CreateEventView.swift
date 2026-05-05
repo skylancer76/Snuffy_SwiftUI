@@ -139,6 +139,7 @@ struct CreateEventView: View {
                             DatePicker(
                                 "",
                                 selection: $viewModel.eventDate,
+                                in: Date()...,
                                 displayedComponents: [.date, .hourAndMinute]
                             )
                             .datePickerStyle(.compact)
