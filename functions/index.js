@@ -2,27 +2,44 @@
 // Authored by bhumika sharam
 //
 // Firebase Cloud Functions for Snuffy:
-//   - approveCaregiver  (HTTP)  — admin approval flow
-//   - geminiChat        (Callable) — server-side proxy to Gemini so the API
-//                        key never ships in the iOS bundle.
+//   - approveCaregiver    (HTTP)     — admin approval flow
+//   - geminiChat          (Callable) — server-side proxy to Gemini so the API
+//                          key never ships in the iOS bundle.
+//   - sendCaregiverEmail  (Callable) — server-side proxy to SendGrid for the
+//                          caretaker / dog-walker approval emails.
 //
 // HOW TO DEPLOY:
 //   cd functions
 //   npm install
-//   firebase functions:secrets:set GEMINI_API_KEY   # paste the rotated key
+//   firebase functions:secrets:set GEMINI_API_KEY     # paste the Gemini key
+//   firebase functions:secrets:set SENDGRID_API_KEY   # paste the SendGrid key
 //   firebase deploy --only functions
+//
+// Non-secret runtime config (SENDER_EMAIL, SENDER_NAME): the first deploy will
+// prompt for values. To set them ahead of time, create `functions/.env` (or
+// `functions/.env.<projectId>`) with:
+//   SENDER_EMAIL=noreply@your-domain.com
+//   SENDER_NAME=Snuffy App
+// `.env*` should be gitignored — these aren't secrets, but they're per-env.
 //
 // The approve button in the admin email hits:
 //   https://us-central1-<PROJECT_ID>.cloudfunctions.net/approveCaregiver?token=<uid>_<role>
 
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
-const { defineSecret } = require("firebase-functions/params");
+const { defineSecret, defineString } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore }  = require("firebase-admin/firestore");
 
 initializeApp();
 
-const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const GEMINI_API_KEY   = defineSecret("GEMINI_API_KEY");
+const SENDGRID_API_KEY = defineSecret("SENDGRID_API_KEY");
+
+// Verified SendGrid sender for caregiver-application emails. Not secrets —
+// just runtime config. Set via `functions/.env` or the first-deploy prompt.
+// SENDER_EMAIL must be a verified single-sender or domain in SendGrid.
+const SENDER_EMAIL = defineString("SENDER_EMAIL");
+const SENDER_NAME  = defineString("SENDER_NAME", { default: "Snuffy" });
 
 exports.approveCaregiver = onRequest(async (req, res) => {
     const token = (req.query.token || "").trim();
@@ -135,6 +152,70 @@ exports.geminiChat = onCall(
         }
 
         return { text: text.trim() };
+    }
+);
+
+// ─── SendGrid Proxy (callable) ───────────────────────────────────────────────
+//
+// iOS calls this via the FirebaseFunctions SDK
+// (`Functions.functions().httpsCallable("sendCaregiverEmail")`). The SendGrid
+// key lives as a Firebase secret, so it never ships in the iOS bundle.
+//
+// Expected request data: { to, subject, htmlBody }. The server fills in the
+// From address from SENDER_EMAIL / SENDER_NAME above.
+
+exports.sendCaregiverEmail = onCall(
+    { secrets: [SENDGRID_API_KEY], region: "us-central1" },
+    async (request) => {
+        if (!request.auth || !request.auth.uid) {
+            throw new HttpsError("unauthenticated", "Sign in required to send approval email.");
+        }
+
+        const { to, subject, htmlBody } = request.data || {};
+        if (!to || !subject || !htmlBody) {
+            throw new HttpsError("invalid-argument", "Missing to, subject, or htmlBody.");
+        }
+
+        const apiKey      = SENDGRID_API_KEY.value();
+        const senderEmail = SENDER_EMAIL.value();
+        const senderName  = SENDER_NAME.value();
+        if (!apiKey) {
+            throw new HttpsError("failed-precondition", "SendGrid API key is not configured.");
+        }
+        if (!senderEmail) {
+            throw new HttpsError("failed-precondition", "SendGrid sender is not configured.");
+        }
+
+        const payload = {
+            personalizations: [{ to: [{ email: to }] }],
+            from: { email: senderEmail, name: senderName || "Snuffy" },
+            subject,
+            content: [{ type: "text/html", value: htmlBody }]
+        };
+
+        let upstream;
+        try {
+            upstream = await fetch("https://api.sendgrid.com/v3/mail/send", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.error("sendCaregiverEmail fetch error:", err);
+            throw new HttpsError("unavailable", "Couldn't reach the email service.");
+        }
+
+        if (!upstream.ok) {
+            const bodyText = await upstream.text();
+            console.error(`sendCaregiverEmail upstream ${upstream.status}: ${bodyText}`);
+            throw new HttpsError("internal", `Email service error (${upstream.status}).`);
+        }
+
+        console.log(`✉️  Sent caregiver email to ${to} (uid=${request.auth.uid})`);
+        return { ok: true };
     }
 );
 

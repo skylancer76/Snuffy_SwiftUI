@@ -44,6 +44,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Firebase Functions runtime config (per-environment, not secrets but per-env)
+functions/.env
+functions/.env.*
+
 # local test files
 test_sendgrid.json
 grep_results.txt

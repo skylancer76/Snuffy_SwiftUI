@@ -9,18 +9,19 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseFunctions
 
 struct AdminNotificationService {
 
     static let shared = AdminNotificationService()
 
-    private let sendGridAPIKey  =  ""
-    private let senderEmail     =  ""
-    private let senderName      = ""
-    private let adminEmail      = ""
-    private let firebaseProjectID = ""
-   
+    // Where caregiver-application emails are sent. Not a secret — fill in.
+    private let adminEmail        = "sharmabhumika54@gmail.com"
+    // Used to build the Approve button URL in the email. Not a secret.
+    private let firebaseProjectID = "pawpal-18920"
+
     private let db = Firestore.firestore()
+    private let functions = Functions.functions()
 
     // MARK: - Send Caretaker Approval Email
     func sendCaretakerApprovalRequest(
@@ -105,66 +106,31 @@ struct AdminNotificationService {
         print("[AdminNotificationService] 📨 sendEmail function called for dogwalker")
     }
 
-    // MARK: - Core SendGrid API Call
+    // MARK: - Core Email Send (via Cloud Function)
+    //
+    // The SendGrid API key lives server-side as a Firebase Secret. This client
+    // forwards { to, subject, htmlBody } to the `sendCaregiverEmail` callable,
+    // which proxies the request to SendGrid.
     private func sendEmail(to: String, subject: String, htmlBody: String) {
         print("[AdminNotificationService] 📧 Preparing to send email...")
         print("[AdminNotificationService] To: \(to)")
         print("[AdminNotificationService] Subject: \(subject)")
 
-        guard let url = URL(string: "https://api.sendgrid.com/v3/mail/send") else {
-            print("[AdminNotificationService] ❌ Invalid SendGrid URL")
-            return
-        }
-
-        let body: [String: Any] = [
-            "personalizations": [
-                ["to": [["email": to]]]
-            ],
-            "from": ["email": senderEmail, "name": senderName],
+        let payload: [String: Any] = [
+            "to": to,
             "subject": subject,
-            "content": [
-                ["type": "text/html", "value": htmlBody]
-            ]
+            "htmlBody": htmlBody
         ]
 
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: body) else {
-            print("[AdminNotificationService] ❌ Failed to serialize JSON body")
-            return
-        }
-
-        print("[AdminNotificationService] 📤 Sending request to SendGrid...")
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(sendGridAPIKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = jsonData
-
-        // Use a semaphore to ensure the request completes before the app moves on
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("[AdminNotificationService] ❌ Network error: \(error.localizedDescription)")
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("[AdminNotificationService] ❌ No HTTP response received")
-                return
-            }
-
-            let responseBody = data.flatMap { String(data: $0, encoding: .utf8) } ?? "<no body>"
-
-            if (200...299).contains(httpResponse.statusCode) {
+        let callable = functions.httpsCallable("sendCaregiverEmail")
+        Task {
+            do {
+                _ = try await callable.call(payload)
                 print("[AdminNotificationService] ✅ Email sent successfully to \(to)")
-                print("[AdminNotificationService] HTTP Status: \(httpResponse.statusCode)")
-            } else {
-                print("[AdminNotificationService] ❌ SendGrid Error")
-                print("[AdminNotificationService] HTTP Status: \(httpResponse.statusCode)")
-                print("[AdminNotificationService] Response: \(responseBody)")
+            } catch {
+                print("[AdminNotificationService] ❌ Email send failed: \(error.localizedDescription)")
             }
         }
-
-        task.resume()
         print("[AdminNotificationService] 📧 Email task started")
     }
 
