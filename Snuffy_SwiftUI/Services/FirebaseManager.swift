@@ -879,10 +879,7 @@ class FirebaseManager {
     }
 
     // MARK: - Reject + Reassign
-
-    /// Caretaker rejects a scheduleRequest. Reassigns to the next-best caretaker
-    /// (excluding the rejecting one). If no candidates remain, the request is left
-    /// with status="rejected" and the caretakerId cleared.
+    
     func rejectAndReassignCaretakerRequest(rejectingCaretakerId: String,
                                            requestId: String,
                                            completion: @escaping (Error?) -> Void) {
@@ -918,7 +915,6 @@ class FirebaseManager {
         }
     }
 
-    /// DogWalker rejects a dogWalkerRequest. Same pattern as caretaker reject.
     func rejectAndReassignDogWalkerRequest(rejectingDogWalkerId: String,
                                            requestId: String,
                                            completion: @escaping (Error?) -> Void) {

@@ -70,7 +70,7 @@ struct PetProfileView: View {
                             PetProfileImageView(imageUrl: pet.petImage)
                                 .frame(width: 200, height: 200)
                                 .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.1), radius: 20, x: 0, y: 10)
+                                .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                                 .padding(.top, 20)
                                 .padding(.bottom, 30)
                             

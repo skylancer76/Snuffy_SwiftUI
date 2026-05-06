@@ -250,8 +250,8 @@ struct EventCard: View {
     let event: CommunityEvent
     let snuffyPink: Color
 
-    private let cardWidth: CGFloat = 300
-    private let imageHeight: CGFloat = 260
+    private let cardWidth: CGFloat = 240
+    private let imageHeight: CGFloat = 190
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

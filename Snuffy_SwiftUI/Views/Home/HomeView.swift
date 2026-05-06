@@ -383,6 +383,11 @@ struct SearchBarView: View {
         .padding(.vertical, 13)
         .background(Color.white.opacity(0.8))
         .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .stroke(Color(red: 1.0, green: 0.4, blue: 0.6).opacity(0.5), lineWidth: 2)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
     }
 }
 
