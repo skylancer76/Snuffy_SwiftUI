@@ -12,13 +12,16 @@ import PhotosUI
 struct UserProfileView: View {
     @ObservedObject var viewModel: HomeViewModel
     @Environment(\.dismiss) private var dismiss
-    
+    @Environment(\.openURL) private var openURL
+
     @State private var showImagePicker = false
     @State private var selectedImage: UIImage?
     @State private var photoItem: PhotosPickerItem?
     @State private var showDeleteConfirmation = false
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    private let helpURL = URL(string: "https://snuffy-website.vercel.app/")!
+    private let dataPolicyURL = URL(string: "https://snuffy-website.vercel.app/security")!
     
     var body: some View {
         ZStack {
@@ -190,19 +193,19 @@ struct UserProfileView: View {
                                 .padding(.leading, 56)
                             
                             // Help
-                            Button(action: {}) {
+                            Button(action: { openURL(helpURL) }) {
                                 HStack(spacing: 16) {
                                     Image(systemName: "questionmark.circle.fill")
                                         .font(.system(size: 18))
                                         .foregroundColor(snuffyPink)
                                         .frame(width: 24, alignment: .center)
-                                    
+
                                     Text("Help")
                                         .font(.system(size: 16))
                                         .foregroundColor(.primary)
-                                    
+
                                     Spacer()
-                                    
+
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.gray.opacity(0.4))
@@ -210,24 +213,24 @@ struct UserProfileView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 16)
                             }
-                            
+
                             Divider()
                                 .padding(.leading, 56)
-                            
+
                             // See how your data is managed
-                            Button(action: {}) {
+                            Button(action: { openURL(dataPolicyURL) }) {
                                 HStack(spacing: 16) {
                                     Image(systemName: "shield.checkered")
                                         .font(.system(size: 18))
                                         .foregroundColor(snuffyPink)
                                         .frame(width: 24, alignment: .center)
-                                    
+
                                     Text("See how your data is managed")
                                         .font(.system(size: 16))
                                         .foregroundColor(.primary)
-                                    
+
                                     Spacer()
-                                    
+
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.gray.opacity(0.4))

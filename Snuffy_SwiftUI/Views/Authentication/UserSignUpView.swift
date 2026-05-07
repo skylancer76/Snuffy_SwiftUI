@@ -117,19 +117,30 @@ struct UserSignUpView: View {
                     .padding(.top, 16)
                     
                     // Terms and Conditions
-                    Button(action: {
-                        viewModel.hasAgreedToTerms.toggle()
-                    }) {
-                        HStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            viewModel.hasAgreedToTerms.toggle()
+                        }) {
                             Image(systemName: viewModel.hasAgreedToTerms ? "checkmark.square.fill" : "square")
                                 .font(.system(size: 24))
                                 .foregroundColor(snuffyPink)
-                            
-                            Text("Agree with Terms & Conditions")
-                                .font(.system(size: 16))
-                                .foregroundColor(.black)
-                            
-                            Spacer()
+                        }
+
+                        Text("Agree with ")
+                            .font(.system(size: 16))
+                            .foregroundColor(.black)
+                        +
+                        Text("Terms & Conditions")
+                            .font(.system(size: 16))
+                            .foregroundColor(snuffyPink)
+                            .underline()
+
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if let url = URL(string: "https://snuffy-website.vercel.app/terms") {
+                            UIApplication.shared.open(url)
                         }
                     }
                     .padding(.horizontal, 32)
