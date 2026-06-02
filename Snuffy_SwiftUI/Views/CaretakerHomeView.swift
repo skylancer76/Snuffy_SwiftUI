@@ -55,31 +55,31 @@ struct CaretakerHomeView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
-            .padding(.bottom, 30)
+            .padding(.bottom, 12)
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 30) {
+                VStack(alignment: .leading, spacing: 0) {
                     
                     // 1. Banner Section
-                    Image("Home Screen Banner")
+                    Image("Caretaker Home Screen Banner")
                         .resizable()
-                        .scaledToFill()
-                        .frame(height: 120)
-                        .clipped()
-                        .cornerRadius(25)
+                        .aspectRatio(contentMode: .fit)
                         .padding(.horizontal, 20)
+                        .padding(.bottom, 25)
                     
                     // 2. Upcoming Bookings Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 0) {
                         Text("Upcoming Bookings")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.black)
                             .padding(.horizontal, 20)
+                            .padding(.bottom, 20)
                         
                         if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
                             ProgressView()
                                 .padding(.vertical, 30)
                                 .frame(maxWidth: .infinity)
+                                .padding(.bottom, 25)
                         } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
                             VStack(spacing: 12) {
                                 Image(systemName: "calendar.badge.exclamationmark")
@@ -94,57 +94,62 @@ struct CaretakerHomeView: View {
                             .background(Color.white)
                             .cornerRadius(16)
                             .padding(.horizontal, 20)
+                            .padding(.bottom, 25)
                         } else {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 16) {
                                     ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
                                         RequestCard(
                                             petName: request.petName,
-                                            ownerName: request.userName,
-                                            breed: request.petBreed ?? "Breed Not Available",
+                                            serviceType: "Pet Sitting",
+                                            duration: caretakerDuration(for: request),
                                             dateLine: caretakerDateLine(for: request),
                                             imageUrl: request.petImageUrl,
                                             onAccept: { viewModel.acceptCaretakerRequest(request: request) },
                                             onReject: { pendingRejectCaretaker = request }
                                         )
-                                        .frame(width: 340)
+                                        .frame(width: UIScreen.main.bounds.width - 40)
                                     }
 
                                     ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
                                         RequestCard(
                                             petName: request.petName,
-                                            ownerName: request.userName,
-                                            breed: request.petBreed ?? "Breed Not Available",
+                                            serviceType: "Dog Walking",
+                                            duration: request.duration,
                                             dateLine: dogWalkerDateLine(for: request),
                                             imageUrl: request.petImageUrl,
                                             onAccept: { viewModel.acceptDogWalkerRequest(request: request) },
                                             onReject: { pendingRejectDogWalker = request }
                                         )
-                                        .frame(width: 340)
+                                        .frame(width: UIScreen.main.bounds.width - 40)
                                     }
                                 }
                                 .padding(.horizontal, 20)
-                                .padding(.vertical, 10) // padding to avoid shadow clipping
+                                .padding(.bottom, 12) // padded to prevent shadow clipping
                             }
+                            .padding(.bottom, 25)
                         }
                     }
 
                     // 3. Calendar Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Schedule")
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Booking Calendar")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.black)
                             .padding(.horizontal, 20)
+                            .padding(.bottom, 20)
 
                         MonthCalendarView(bookingsByDate: viewModel.bookingsByDate)
+                            .padding(.bottom, 25)
                     }
 
                     // 4. Articles Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 0) {
                         Text(sectionTitleForRole)
                             .font(.system(size: 22, weight: .bold))
                             .foregroundColor(.black)
                             .padding(.horizontal, 20)
+                            .padding(.bottom, 20)
 
                         VStack(spacing: 16) {
                             ForEach(articlesForRole) { article in
@@ -195,7 +200,7 @@ struct CaretakerHomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(
             LinearGradient(
-                colors: [snuffyPink.opacity(0.35), Color.clear],
+                colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
                 startPoint: .top,
                 endPoint: .center
             )
@@ -231,13 +236,23 @@ extension CaretakerHomeView {
         let f = DateFormatter()
         f.dateFormat = "d MMM yyyy"
         guard let start = request.startDate, let end = request.endDate else { return request.duration }
-        return "\(f.string(from: start)) – \(f.string(from: end))"
+        return "\(f.string(from: start)) • \(f.string(from: end))"
+    }
+
+    fileprivate func caretakerDuration(for request: ScheduleCaretakerRequest) -> String {
+        guard let start = request.startDate, let end = request.endDate else { return request.duration }
+        let calendar = Calendar.current
+        let startOfDay1 = calendar.startOfDay(for: start)
+        let startOfDay2 = calendar.startOfDay(for: end)
+        let components = calendar.dateComponents([.day], from: startOfDay1, to: startOfDay2)
+        let days = max(1, abs(components.day ?? 0))
+        return "\(days) Day\(days == 1 ? "" : "s")"
     }
 
     fileprivate func dogWalkerDateLine(for request: ScheduleDogWalkerRequest) -> String {
         let dateFmt = DateFormatter(); dateFmt.dateFormat = "d MMM yyyy"
         let timeFmt = DateFormatter(); timeFmt.dateFormat = "h:mm a"
-        return "\(dateFmt.string(from: request.date)), \(timeFmt.string(from: request.startTime)) – \(timeFmt.string(from: request.endTime))"
+        return "\(dateFmt.string(from: request.date)) • \(timeFmt.string(from: request.startTime)) – \(timeFmt.string(from: request.endTime))"
     }
 }
 
@@ -286,86 +301,98 @@ struct ArticleCard: View {
 
 struct RequestCard: View {
     let petName: String
-    let ownerName: String
-    let breed: String
+    let serviceType: String
+    let duration: String
     let dateLine: String
     let imageUrl: String?
     let onAccept: () -> Void
     let onReject: () -> Void
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    private let imageSize: CGFloat = 75
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Pet Image
-            if let urlStr = imageUrl, let url = URL(string: urlStr) {
-                KFImage(url)
-                    .resizable()
-                    .placeholder {
-                        Image("DogPlaceholder").resizable().scaledToFill()
+        VStack(spacing: 20) {
+            HStack(alignment: .top, spacing: 16) {
+                // Pet Image (Circle)
+                if let urlStr = imageUrl, let url = URL(string: urlStr) {
+                    KFImage(url)
+                        .resizable()
+                        .placeholder {
+                            Image("DogPlaceholder")
+                                .resizable()
+                                .scaledToFill()
+                        }
+                        .scaledToFill()
+                        .frame(width: imageSize, height: imageSize)
+                        .clipShape(Circle())
+                } else {
+                    Image("DogPlaceholder")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: imageSize, height: imageSize)
+                        .clipShape(Circle())
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .top) {
+                        Text(petName)
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.black)
+                        
+                        Spacer()
+                        
+                        // New badge
+                        HStack(spacing: 4) {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 8))
+                            Text("New")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color(red: 138/255, green: 100/255, blue: 250/255))
+                        .clipShape(Capsule())
                     }
-                    .scaledToFill()
-                    .frame(width: 100, height: 100)
-                    .cornerRadius(10)
-                    .clipped()
-            } else {
-                Image("DogPlaceholder")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 100, height: 100)
-                    .cornerRadius(10)
-                    .clipped()
+
+                    Text("\(serviceType) • \(duration)")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.gray)
+
+                    Text(dateLine)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.gray)
+                }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(petName)
-                    .font(.system(size: 18, weight: .bold))
+            // Action Buttons (Accept Green, Reject Red)
+            HStack(spacing: 16) {
+                Button(action: onAccept) {
+                    Text("Accept")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(Color(red: 46/255, green: 204/255, blue: 113/255))
+                        .clipShape(Capsule())
+                }
 
-                Text(ownerName)
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-
-                Text(breed)
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-
-                Text(dateLine)
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: 12)
-
-                HStack(spacing: 10) {
-                    Button(action: onReject) {
-                        Text("Reject")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(snuffyPink)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(Color.white)
-                            .overlay(
-                                Capsule().stroke(snuffyPink, lineWidth: 1.2)
-                            )
-                            .clipShape(Capsule())
-                    }
-
-                    Button(action: onAccept) {
-                        Text("Accept")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(snuffyPink)
-                            .clipShape(Capsule())
-                    }
+                Button(action: onReject) {
+                    Text("Reject")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(Color(red: 255/255, green: 71/255, blue: 87/255))
+                        .clipShape(Capsule())
                 }
             }
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .padding(16)
+        .background(Color.white.opacity(0.8))
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
     }
 }
 

@@ -8,11 +8,6 @@
 import SwiftUI
 
 struct UserSignUpView: View {
-    @StateObject private var viewModel = UserSignUpViewModel()
-    @Environment(\.dismiss) var dismiss
-    
-    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
-    
     var body: some View {
         ZStack {
             // Gradient Background
@@ -117,30 +112,19 @@ struct UserSignUpView: View {
                     .padding(.top, 16)
                     
                     // Terms and Conditions
-                    HStack(spacing: 12) {
-                        Button(action: {
-                            viewModel.hasAgreedToTerms.toggle()
-                        }) {
+                    Button(action: {
+                        viewModel.hasAgreedToTerms.toggle()
+                    }) {
+                        HStack(spacing: 12) {
                             Image(systemName: viewModel.hasAgreedToTerms ? "checkmark.square.fill" : "square")
                                 .font(.system(size: 24))
                                 .foregroundColor(snuffyPink)
-                        }
-
-                        Text("Agree with ")
-                            .font(.system(size: 16))
-                            .foregroundColor(.black)
-                        +
-                        Text("Terms & Conditions")
-                            .font(.system(size: 16))
-                            .foregroundColor(snuffyPink)
-                            .underline()
-
-                        Spacer()
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if let url = URL(string: "https://snuffy-website.vercel.app/terms") {
-                            UIApplication.shared.open(url)
+                            
+                            Text("Agree with Terms & Conditions")
+                                .font(.system(size: 16))
+                                .foregroundColor(.black)
+                            
+                            Spacer()
                         }
                     }
                     .padding(.horizontal, 32)
@@ -197,7 +181,5 @@ struct UserSignUpView: View {
 }
 
 #Preview {
-    NavigationStack {
-        UserSignUpView()
-    }
+    UserSignUpView()
 }

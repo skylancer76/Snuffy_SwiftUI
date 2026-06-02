@@ -15,83 +15,83 @@ struct CaregiverBookingsView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Background gradient — same as snuffy-main gradient
-                LinearGradient(
-                    colors: [snuffyPink.opacity(0.3), Color.clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 400)
-                .frame(maxHeight: .infinity, alignment: .top)
-                .ignoresSafeArea()
+        ZStack {
+            // Background gradient — same as MyBookingsView gradient
+            LinearGradient(
+                colors: [
+                    Color(red: 1.0, green: 0.4, blue: 0.6).opacity(0.4),
+                    Color(UIColor.systemGray6)
+                ],
+                startPoint: .top,
+                endPoint: .center
+            )
+            .ignoresSafeArea()
 
-                VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 24) {
 
-                    // Title
-                    Text("My Bookings")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
+                // Title
+                Text("My Bookings")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
 
-                    // Segmented control — Upcoming / Completed
-                    HStack(spacing: 0) {
-                        segmentButton("Upcoming", 0)
-                        segmentButton("Completed", 1)
+                // Segmented control — Upcoming / Completed
+                HStack(spacing: 0) {
+                    segmentButton("Upcoming", 0)
+                    segmentButton("Completed", 1)
+                }
+                .padding(4)
+                .background(
+                    ZStack {
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                        Capsule()
+                            .fill(snuffyPink.opacity(0.10))
+                        Capsule()
+                            .strokeBorder(Color.white.opacity(0.55), lineWidth: 1)
                     }
-                    .padding(4)
-                    .background(
-                        ZStack {
-                            Capsule()
-                                .fill(.ultraThinMaterial)
-                            Capsule()
-                                .fill(snuffyPink.opacity(0.10))
-                            Capsule()
-                                .strokeBorder(Color.white.opacity(0.55), lineWidth: 1)
-                        }
-                    )
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
-                    .padding(.horizontal, 16)
+                )
+                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
+                .padding(.horizontal, 16)
 
-                    // List
-                    ScrollView {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 40)
-                        } else {
-                            let items = selectedTab == 0 ? viewModel.upcomingBookings : viewModel.completedBookings
-                            if items.isEmpty {
-                                VStack(spacing: 12) {
-                                    Image(systemName: "tray")
-                                        .font(.system(size: 50))
-                                        .foregroundColor(.gray.opacity(0.5))
-                                    Text("No \(selectedTab == 0 ? "upcoming" : "completed") bookings")
-                                        .font(.headline)
-                                        .foregroundColor(.gray)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 60)
-                            } else {
-                                LazyVStack(spacing: 20) {
-                                    ForEach(items) { booking in
-                                        let bookingItem = convertToBookingItem(booking)
-                                        CaregiverBookingCard(booking: booking, bookingItem: bookingItem)
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.top, 10)
-                                .padding(.bottom, 100)
+                // List
+                ScrollView {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 40)
+                    } else {
+                        let items = selectedTab == 0 ? viewModel.upcomingBookings : viewModel.completedBookings
+                        if items.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "tray")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text("No \(selectedTab == 0 ? "upcoming" : "completed") bookings")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 60)
+                        } else {
+                            LazyVStack(spacing: 24) {
+                                ForEach(items) { booking in
+                                    let bookingItem = convertToBookingItem(booking)
+                                    CaregiverBookingCard(booking: booking, bookingItem: bookingItem)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 100)
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarHidden(true)
+        .navigationBarTitle("", displayMode: .inline)
     }
 
     @ViewBuilder
@@ -170,11 +170,21 @@ struct CaregiverBookingCard: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.black)
                     
-                    if let start = booking.caretakerRequest?.startDate ?? booking.dogWalkerRequest?.startTime {
-                        dateRow(label: "Start:", date: start)
-                    }
-                    if let end = booking.caretakerRequest?.endDate ?? booking.dogWalkerRequest?.endTime {
-                        dateRow(label: "End:", date: end)
+                    if booking.type == .caretaker {
+                        if let start = booking.caretakerRequest?.startDate {
+                            dateRow(label: "Start:", date: start)
+                        }
+                        if let end = booking.caretakerRequest?.endDate {
+                            dateRow(label: "End:", date: end)
+                        }
+                    } else {
+                        if let start = booking.dogWalkerRequest?.startTime {
+                            dateRow(label: "Date:", date: start)
+                        }
+                        if let start = booking.dogWalkerRequest?.startTime,
+                           let end = booking.dogWalkerRequest?.endTime {
+                            labelRow(label: "Duration:", value: formatTimeRange(start: start, end: end))
+                        }
                     }
                 }
                 
@@ -219,10 +229,23 @@ struct CaregiverBookingCard: View {
             .minimumScaleFactor(0.8)
     }
 
+    private func labelRow(label: String, value: String) -> some View {
+        (Text(label).foregroundColor(.gray) + Text(" \(value)").foregroundColor(.black))
+            .font(.system(size: 12))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd MMM yyyy"
         return formatter.string(from: date)
+    }
+
+    private func formatTimeRange(start: Date, end: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "h a"
+        return "\(f.string(from: start)) to \(f.string(from: end))"
     }
 
     @ViewBuilder
@@ -275,7 +298,7 @@ struct CaregiverBookingCard: View {
         switch booking.status.lowercased() {
         case "accepted":  return .blue
         case "ongoing":   return .pink
-        case "completed": return Color(red: 0.15, green: 0.78, blue: 0.35) // nice green
+        case "completed": return .green
         case "rejected":  return .red
         default:          return .orange
         }
@@ -283,5 +306,7 @@ struct CaregiverBookingCard: View {
 }
 
 #Preview {
-    CaregiverBookingsView()
+    NavigationStack {
+        CaregiverBookingsView()
+    }
 }
