@@ -1,8 +1,3 @@
-//
-//  RatingViewModel.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma 
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore

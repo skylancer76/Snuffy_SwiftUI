@@ -1,11 +1,3 @@
-//
-//  Snuffy_SwiftUIApp.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 30/12/25.
-//
-
-
 import SwiftUI
 import Firebase
 

@@ -1,10 +1,3 @@
-//
-//  LocationManager.swift
-//  Snuffy_SwiftUI
-//
-//  Authored by bhumika sharam
-//
-
 import SwiftUI
 import CoreLocation
 import Combine
@@ -14,9 +7,11 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     static let shared = LocationManager()
 
     // MARK: - Published State
+
     @Published var authorizationStatus: CLAuthorizationStatus
 
     // MARK: - Private
+
     private let clManager = CLLocationManager()
     private var locationCompletion: ((Double, Double) -> Void)?
 
@@ -28,18 +23,17 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     // MARK: - Permission
-    
+
     func requestLocationPermission() {
         clManager.requestWhenInUseAuthorization()
     }
 
-    // MARK: - Get Location for Onboarding
-    
+    // MARK: - Location for Onboarding
+
     func getLocationForOnboarding(address: String, completion: @escaping (Double, Double) -> Void) {
         let status = clManager.authorizationStatus
 
         if status == .authorizedWhenInUse || status == .authorizedAlways {
-            // Try GPS first
             locationCompletion = { [weak self] lat, lng in
                 self?.locationCompletion = nil
                 self?.clManager.stopUpdatingLocation()
@@ -47,7 +41,6 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             }
             clManager.startUpdatingLocation()
 
-            // Timeout: if GPS doesn't respond in 8s, fall back to geocoding
             DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
                 guard let self = self, self.locationCompletion != nil else { return }
                 self.locationCompletion = nil
@@ -55,12 +48,12 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
                 self.geocodeAddress(address, completion: completion)
             }
         } else {
-            // No permission — geocode from address string
             geocodeAddress(address, completion: completion)
         }
     }
 
-    // MARK: - Geocode Address
+    // MARK: - Geocoding
+
     private func geocodeAddress(_ address: String, completion: @escaping (Double, Double) -> Void) {
         let trimmed = address.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -72,22 +65,19 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             if let location = placemarks?.first?.location {
                 completion(location.coordinate.latitude, location.coordinate.longitude)
             } else {
-                print("[LocationManager] Geocoding failed: \(error?.localizedDescription ?? "unknown")")
                 completion(0.0, 0.0)
             }
         }
     }
 
     // MARK: - CLLocationManagerDelegate
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         locationCompletion?(location.coordinate.latitude, location.coordinate.longitude)
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("[LocationManager] GPS error: \(error.localizedDescription)")
-        // If GPS fails, the timeout will trigger geocoding fallback
-    }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         DispatchQueue.main.async { [weak self] in

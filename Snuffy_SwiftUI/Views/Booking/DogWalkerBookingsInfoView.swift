@@ -1,8 +1,3 @@
-//
-//  DogWalkerBookingsInfoView.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma 
-
 import SwiftUI
 import Kingfisher
 import MessageUI

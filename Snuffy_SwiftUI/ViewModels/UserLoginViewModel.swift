@@ -1,10 +1,3 @@
-//
-//  UserLoginViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 13/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseAuth
@@ -55,7 +48,6 @@ class UserLoginViewModel: ObservableObject {
         
         isLoading = true
         
-        // TODO: Connect to Firebase Manager
         Auth.auth().signIn(withEmail: email, password: password) { [weak self] authResult, error in
             guard let self = self else { return }
             
@@ -81,7 +73,7 @@ class UserLoginViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Firebase Methods (to be connected to Firebase Manager later)
+    // MARK: - Role Detection
     private func checkUserRoles(userID: String) {
         let group = DispatchGroup()
         var isCaretaker = false
@@ -117,7 +109,6 @@ class UserLoginViewModel: ObservableObject {
         
         caretakersRef.whereField("caretakerId", isEqualTo: userID).getDocuments { snapshot, error in
             if let error = error {
-                print("Error verifying caretaker role: \(error.localizedDescription)")
                 completion(false)
                 return
             }
@@ -131,7 +122,6 @@ class UserLoginViewModel: ObservableObject {
 
         dogWalkersRef.whereField("dogWalkerId", isEqualTo: userID).getDocuments { snapshot, error in
             if let error = error {
-                print("Error verifying dog walker role: \(error.localizedDescription)")
                 completion(false)
                 return
             }

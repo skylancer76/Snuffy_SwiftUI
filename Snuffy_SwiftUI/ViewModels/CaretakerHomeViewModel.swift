@@ -1,11 +1,3 @@
-//
-//  CaretakerHomeViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 30/03/26.
-//
-
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -236,7 +228,6 @@ class CaretakerHomeViewModel: ObservableObject {
         do {
             try Auth.auth().signOut()
         } catch {
-            print("Error signing out: \(error.localizedDescription)")
         }
     }
 }

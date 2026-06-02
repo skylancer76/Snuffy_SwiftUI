@@ -1,10 +1,3 @@
-//
-//  BookDogWalkerViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 18/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseAuth
@@ -38,7 +31,6 @@ class BookDogWalkerViewModel: ObservableObject {
             guard let self = self else { return }
             
             if let error = error {
-                print("Error fetching user document: \(error.localizedDescription)")
                 return
             }
             
@@ -56,7 +48,6 @@ class BookDogWalkerViewModel: ObservableObject {
                 .getDocuments { snapshot, error in
                     DispatchQueue.main.async {
                         if let error = error {
-                            print("Error fetching pets: \(error.localizedDescription)")
                             self.petNames = []
                         } else if let snapshot = snapshot {
                             self.petNames = snapshot.documents.compactMap { doc in
@@ -161,7 +152,6 @@ class BookDogWalkerViewModel: ObservableObject {
         let db = Firestore.firestore()
         db.collection("users").document(userId).getDocument { document, error in
             if let error = error {
-                print("Failed to fetch user name: \(error.localizedDescription)")
                 completion("Anonymous User")
             } else if let document = document, document.exists,
                       let data = document.data(),

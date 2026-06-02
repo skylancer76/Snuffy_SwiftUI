@@ -1,10 +1,3 @@
-//
-//  BookCaretakerViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 18/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseAuth
@@ -38,7 +31,6 @@ class BookCaretakerViewModel: ObservableObject {
             guard let self = self else { return }
             
             if let error = error {
-                print("Error fetching user document: \(error.localizedDescription)")
                 return
             }
             
@@ -56,7 +48,6 @@ class BookCaretakerViewModel: ObservableObject {
                 .getDocuments { snapshot, error in
                     DispatchQueue.main.async {
                         if let error = error {
-                            print("Error fetching pets: \(error.localizedDescription)")
                             self.petNames = []
                         } else if let snapshot = snapshot {
                             self.petNames = snapshot.documents.compactMap { doc in

@@ -1,12 +1,9 @@
-//
-//  DeleteAccountService.swift
-//  Snuffy_SwiftUI
-//
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
+
+// MARK: - Error Type
 
 enum DeleteAccountError: Error, LocalizedError {
     case notAuthenticated
@@ -25,6 +22,8 @@ enum DeleteAccountError: Error, LocalizedError {
     }
 }
 
+// MARK: - Delete Account Service
+
 final class DeleteAccountService {
     static let shared = DeleteAccountService()
     private init() {}
@@ -32,9 +31,8 @@ final class DeleteAccountService {
     private let db = Firestore.firestore()
     private let storage = Storage.storage()
 
-    /// Cascade-delete the signed-in user's data, then delete the Firebase Auth account.
-    /// Order matters: Firestore + Storage first, Auth account last, so partial failures
-    /// don't leave an orphan auth account with no user document.
+    /// Cascade-deletes user data (Firestore + Storage) before removing the Auth account.
+    /// Order matters: data first, auth last — prevents orphan auth accounts on partial failure.
     func deleteCurrentUser() async throws {
         guard let user = Auth.auth().currentUser else {
             throw DeleteAccountError.notAuthenticated
@@ -64,7 +62,7 @@ final class DeleteAccountService {
         try? Auth.auth().signOut()
     }
 
-    // MARK: Pets + nested subcollections
+    // MARK: - Pets & Subcollections
 
     private func deletePets(ownerId: String) async throws {
         let snapshot = try await db.collection("Pets")
@@ -82,7 +80,7 @@ final class DeleteAccountService {
         }
     }
 
-    // MARK: Booking requests authored by the user
+    // MARK: - Booking Requests
 
     private func deleteRequests(ownerId: String) async throws {
         for collection in ["scheduleRequests", "dogWalkerRequests"] {
@@ -95,7 +93,7 @@ final class DeleteAccountService {
         }
     }
 
-    // MARK: Caretaker / dogwalker self-records
+    // MARK: - Caregiver Records
 
     private func deleteCaregiverDocs(uid: String) async throws {
         for collection in ["caretakers", "dogwalkers"] {
@@ -113,7 +111,7 @@ final class DeleteAccountService {
         }
     }
 
-    // MARK: Community posts/comments/events authored by the user
+    // MARK: - Community Content
 
     private func deleteCommunityArtifacts(uid: String) async throws {
         for (collection, field) in [
@@ -131,13 +129,13 @@ final class DeleteAccountService {
         }
     }
 
-    // MARK: User document
+    // MARK: - User Document
 
     private func deleteUserDocument(uid: String) async throws {
         try await db.collection("users").document(uid).delete()
     }
 
-    // MARK: Storage (best-effort — missing objects are not an error)
+    // MARK: - Storage (Best-Effort)
 
     private func deleteStorageArtifacts(uid: String) async throws {
         let paths = [

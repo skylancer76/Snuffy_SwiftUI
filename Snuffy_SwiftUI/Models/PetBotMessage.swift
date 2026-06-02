@@ -1,8 +1,3 @@
-//
-//  PetBotMessage.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma
-
 import Foundation
 
 struct PetBotMessage: Identifiable {

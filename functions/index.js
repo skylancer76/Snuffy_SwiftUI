@@ -1,30 +1,3 @@
-// functions/index.js
-// Authored by bhumika sharam
-//
-// Firebase Cloud Functions for Snuffy:
-//   - approveCaregiver    (HTTP)     — admin approval flow
-//   - geminiChat          (Callable) — server-side proxy to Gemini so the API
-//                          key never ships in the iOS bundle.
-//   - sendCaregiverEmail  (Callable) — server-side proxy to SendGrid for the
-//                          caretaker / dog-walker approval emails.
-//
-// HOW TO DEPLOY:
-//   cd functions
-//   npm install
-//   firebase functions:secrets:set GEMINI_API_KEY     # paste the Gemini key
-//   firebase functions:secrets:set SENDGRID_API_KEY   # paste the SendGrid key
-//   firebase deploy --only functions
-//
-// Non-secret runtime config (SENDER_EMAIL, SENDER_NAME): the first deploy will
-// prompt for values. To set them ahead of time, create `functions/.env` (or
-// `functions/.env.<projectId>`) with:
-//   SENDER_EMAIL=noreply@your-domain.com
-//   SENDER_NAME=Snuffy App
-// `.env*` should be gitignored — these aren't secrets, but they're per-env.
-//
-// The approve button in the admin email hits:
-//   https://us-central1-<PROJECT_ID>.cloudfunctions.net/approveCaregiver?token=<uid>_<role>
-
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret, defineString } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
@@ -32,14 +5,15 @@ const { getFirestore }  = require("firebase-admin/firestore");
 
 initializeApp();
 
+// MARK: - Secrets and Configurations
+
 const GEMINI_API_KEY   = defineSecret("GEMINI_API_KEY");
 const SENDGRID_API_KEY = defineSecret("SENDGRID_API_KEY");
 
-// Verified SendGrid sender for caregiver-application emails. Not secrets —
-// just runtime config. Set via `functions/.env` or the first-deploy prompt.
-// SENDER_EMAIL must be a verified single-sender or domain in SendGrid.
 const SENDER_EMAIL = defineString("SENDER_EMAIL");
 const SENDER_NAME  = defineString("SENDER_NAME", { default: "Snuffy" });
+
+// MARK: - Admin Approval Endpoint
 
 exports.approveCaregiver = onRequest(async (req, res) => {
     const token = (req.query.token || "").trim();
@@ -48,10 +22,9 @@ exports.approveCaregiver = onRequest(async (req, res) => {
         return res.status(400).send(errorPage("Invalid or missing approval token."));
     }
 
-    // token format: "<uid>_caretaker"  or  "<uid>_dogwalker"
     const lastUnderscore = token.lastIndexOf("_");
     const uid  = token.substring(0, lastUnderscore);
-    const role = token.substring(lastUnderscore + 1); // "caretaker" or "dogwalker"
+    const role = token.substring(lastUnderscore + 1);
 
     if (!uid || !["caretaker", "dogwalker"].includes(role)) {
         return res.status(400).send(errorPage("Unrecognised role in token."));
@@ -61,10 +34,8 @@ exports.approveCaregiver = onRequest(async (req, res) => {
         const db = getFirestore();
         const collection = role === "caretaker" ? "caretakers" : "dogwalkers";
 
-        // 1. Verify the applicant in the main collection (set with merge to be safe)
         await db.collection(collection).doc(uid).set({ isVerified: true }, { merge: true });
 
-        // 2. Mark the notification as approved (set with merge — works even if doc doesn't exist)
         await db.collection("admin_notifications").doc(token).set({
             uid: uid,
             role: role,
@@ -81,15 +52,7 @@ exports.approveCaregiver = onRequest(async (req, res) => {
     }
 });
 
-// ─── Gemini Proxy (callable) ─────────────────────────────────────────────────
-//
-// iOS calls this via the FirebaseFunctions SDK (`Functions.functions().httpsCallable("geminiChat")`).
-// The request body matches the Gemini `generateContent` schema, so the iOS
-// side stays close to what it sent before — only the transport changes.
-//
-// Auth is enforced: callers must be signed in with Firebase Auth.
-
-const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+// MARK: - Gemini Chat Proxy
 
 exports.geminiChat = onCall(
     { secrets: [GEMINI_API_KEY], region: "us-central1" },
@@ -102,7 +65,7 @@ exports.geminiChat = onCall(
         const contents = data.contents;
         const systemInstruction = data.system_instruction;
         const generationConfig = data.generationConfig || { temperature: 0.6, maxOutputTokens: 1024 };
-        const model = data.model || GEMINI_DEFAULT_MODEL;
+        const model = data.model || "gemini-2.5-flash";
 
         if (!Array.isArray(contents) || contents.length === 0) {
             throw new HttpsError("invalid-argument", "Missing conversation contents.");
@@ -114,7 +77,6 @@ exports.geminiChat = onCall(
         }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
         const payload = { contents, generationConfig };
         if (systemInstruction) {
             payload.system_instruction = systemInstruction;
@@ -155,14 +117,7 @@ exports.geminiChat = onCall(
     }
 );
 
-// ─── SendGrid Proxy (callable) ───────────────────────────────────────────────
-//
-// iOS calls this via the FirebaseFunctions SDK
-// (`Functions.functions().httpsCallable("sendCaregiverEmail")`). The SendGrid
-// key lives as a Firebase secret, so it never ships in the iOS bundle.
-//
-// Expected request data: { to, subject, htmlBody }. The server fills in the
-// From address from SENDER_EMAIL / SENDER_NAME above.
+// MARK: - SendGrid Email Proxy
 
 exports.sendCaregiverEmail = onCall(
     { secrets: [SENDGRID_API_KEY], region: "us-central1" },
@@ -219,7 +174,7 @@ exports.sendCaregiverEmail = onCall(
     }
 );
 
-// ─── HTML Responses ──────────────────────────────────────────────────────────
+// MARK: - HTML Page Templates
 
 function successPage(role) {
     const label = role === "caretaker" ? "Caretaker" : "Dog Walker";
@@ -263,3 +218,4 @@ function errorPage(message) {
 </body>
 </html>`;
 }
+

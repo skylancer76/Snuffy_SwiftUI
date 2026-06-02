@@ -1,8 +1,3 @@
-//
-//  CreateEventView.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma 
-
 import SwiftUI
 import PhotosUI
 

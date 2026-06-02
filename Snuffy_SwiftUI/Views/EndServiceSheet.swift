@@ -1,8 +1,3 @@
-//
-//  EndServiceSheet.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma
-
 import SwiftUI
 
 struct EndServiceSheet: View {

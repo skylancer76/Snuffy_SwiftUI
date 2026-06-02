@@ -1,23 +1,17 @@
-//
-//  DataModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 05/01/26.
-//
-
 import Foundation
 import CoreLocation
 import FirebaseCore
 import FirebaseFirestore
 
-// MARK: - Unified Caretaker Model
+// MARK: - Caretaker Model
+
 class Caretakers: Codable {
     var caretakerId: String
     var name: String
     var email: String
     var password: String
     var profilePic: String?
-    var petSitted : String?
+    var petSitted: String?
     var galleryImages: [String]?
     var bio: String
     var experience: Int
@@ -29,28 +23,27 @@ class Caretakers: Codable {
     var pendingRequests: [String]
     var completedRequests: Int
     var phoneNumber: String?
-    // Onboarding fields
     var isVerified: Bool?
     var isProfileComplete: Bool?
     var certification: String?
     var lor: String?
     var petsHandled: Int?
+
     var latitude: Double? {
-            return location.count > 0 ? location[0] : nil
-        }
-        
+        return location.count > 0 ? location[0] : nil
+    }
+
     var longitude: Double? {
-            return location.count > 1 ? location[1] : nil
-        }
-    
-    
+        return location.count > 1 ? location[1] : nil
+    }
+
     init(
         caretakerId: String,
         name: String,
         email: String,
         password: String,
         profilePic: String? = nil,
-        petSitted : String? = nil,
+        petSitted: String? = nil,
         galleryImages: [String]? = nil,
         bio: String,
         experience: Int,
@@ -93,8 +86,6 @@ class Caretakers: Codable {
     }
 }
 
-
-
 // MARK: - Dog Walker Model
 
 class DogWalker: Codable {
@@ -113,20 +104,20 @@ class DogWalker: Codable {
     var pendingRequests: [String]
     var completedRequests: Int
     var phoneNumber: String?
-    // Onboarding fields
     var isVerified: Bool?
     var isProfileComplete: Bool?
     var certification: String?
     var lor: String?
     var petsHandled: Int?
+
     var latitude: Double? {
-            return location.count > 0 ? location[0] : nil
-        }
-        
+        return location.count > 0 ? location[0] : nil
+    }
+
     var longitude: Double? {
-            return location.count > 1 ? location[1] : nil
-        }
-    // Initialization
+        return location.count > 1 ? location[1] : nil
+    }
+
     init(
         dogWalkerId: String,
         name: String,
@@ -172,6 +163,8 @@ class DogWalker: Codable {
     }
 }
 
+// MARK: - Request & Booking Enums
+
 enum RequestType {
     case caretaker
     case dogWalker
@@ -193,6 +186,7 @@ enum ProfileType {
 }
 
 // MARK: - Pet Data Model
+
 class PetData: Codable, Identifiable {
     var petId: String
     var petImage: String?
@@ -204,7 +198,7 @@ class PetData: Codable, Identifiable {
     var medications: [PetMedicationDetails]?
     var vaccinationDetails: [VaccinationDetails]?
     var dietaryDetails: [PetDietDetails]?
-    
+
     init(
         petId: String = UUID().uuidString,
         petImage: String? = nil,
@@ -216,7 +210,6 @@ class PetData: Codable, Identifiable {
         medications: [PetMedicationDetails]? = nil,
         vaccinationDetails: [VaccinationDetails]? = nil,
         dietaryDetails: [PetDietDetails]? = nil
-
     ) {
         self.petId = petId
         self.petImage = petImage
@@ -231,9 +224,9 @@ class PetData: Codable, Identifiable {
     }
 }
 
-// MARK: - Dietary Details Model
+// MARK: - Pet Diet Details
+
 class PetDietDetails: Codable {
-    
     var dietId: String?
     var mealType: String
     var foodName: String
@@ -261,10 +254,9 @@ class PetDietDetails: Codable {
     }
 }
 
+// MARK: - Pet Medication Details
 
-// MARK: - Medication Model
 class PetMedicationDetails: Codable {
-    
     var medicationId: String?
     var medicineName: String
     var medicineType: String
@@ -295,6 +287,8 @@ class PetMedicationDetails: Codable {
     }
 }
 
+// MARK: - Vaccination Details
+
 class VaccinationDetails: Codable {
     var vaccineId: String?
     var vaccineName: String
@@ -323,10 +317,9 @@ class VaccinationDetails: Codable {
     }
 }
 
+// MARK: - Caretaker Schedule Request
 
 struct ScheduleCaretakerRequest: Codable {
-    
-    // MARK: - Required Fields
     var requestId: String
     var userId: String
     var userName: String
@@ -349,9 +342,8 @@ struct ScheduleCaretakerRequest: Codable {
     var longitude: Double?
     var duration: String
     var timestamp: Date?
-    
+
     init?(from data: [String: Any]) {
-       
         guard let requestId = data["requestId"] as? String,
               let userId    = data["userId"] as? String,
               let userName  = data["userName"] as? String,
@@ -366,7 +358,7 @@ struct ScheduleCaretakerRequest: Codable {
         else {
             return nil
         }
-        
+
         self.requestId = requestId
         self.userId = userId
         self.userName = userName
@@ -387,30 +379,27 @@ struct ScheduleCaretakerRequest: Codable {
         self.location = data["location"]     as? String
         self.latitude = data["latitude"]     as? Double
         self.longitude = data["longitude"]    as? Double
-        self.duration = ScheduleCaretakerRequest.formatDateRange(start: startTimestamp,
-                                                            end: endTimestamp)
+        self.duration = ScheduleCaretakerRequest.formatDateRange(start: startTimestamp, end: endTimestamp)
+
         if let rawTimestamp = data["timestamp"] as? Timestamp {
             self.timestamp = rawTimestamp.dateValue()
         } else {
             self.timestamp = nil
         }
     }
-    
+
     static func formatDateRange(start: Timestamp, end: Timestamp) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .short
-        
+
         let startStr = dateFormatter.string(from: start.dateValue())
         let endStr   = dateFormatter.string(from: end.dateValue())
         return "\(startStr) - \(endStr)"
     }
 }
 
-
-
-
-// MARK: - Dogwalker Request
+// MARK: - Dog Walker Schedule Request
 
 struct ScheduleDogWalkerRequest: Codable {
     var requestId: String
@@ -431,7 +420,7 @@ struct ScheduleDogWalkerRequest: Codable {
     var houseNo: String?
     var landmark: String?
     var timestamp: Date?
-    
+
     init?(from data: [String: Any]) {
         guard
             let requestId = data["requestId"] as? String,
@@ -444,11 +433,10 @@ struct ScheduleDogWalkerRequest: Codable {
             let instructions = data["instructions"] as? String,
             let dogWalkerId = data["dogWalkerId"] as? String,
             let status = data["status"] as? String
-            
         else {
             return nil
         }
-        
+
         self.requestId = requestId
         self.userId = userId
         self.userName = userName
@@ -465,16 +453,16 @@ struct ScheduleDogWalkerRequest: Codable {
         self.buildingNo = data["buildingNo"]   as? String
         self.houseNo = data["houseNo"]      as? String
         self.landmark = data["landmark"]     as? String
-        
+
         if let rawTimestamp = data["timestamp"] as? Timestamp {
             self.timestamp = rawTimestamp.dateValue()
         } else {
             self.timestamp = nil
         }
-        
+
         self.duration = ScheduleDogWalkerRequest.calculateDuration(start: self.startTime, end: self.endTime)
     }
-    
+
     static func calculateDuration(start: Date, end: Date) -> String {
         let interval = end.timeIntervalSince(start)
         let hours = Int(interval) / 3600
@@ -483,30 +471,29 @@ struct ScheduleDogWalkerRequest: Codable {
     }
 }
 
-    
+// MARK: - Chat Message
 
-
-// MARK: - Chats Struct
 struct ChatMessage {
     var senderId: String
     var text: String
     var timestamp: Date
 }
 
-class PetLiveUpdate  {
+// MARK: - Pet Live Update
+
+class PetLiveUpdate {
     var name: String
     var description: String
     var location: CLLocationCoordinate2D
     var im: [String]
-    
+
     init(name: String, description: String, location: CLLocationCoordinate2D, im: [String]) {
         self.name = name
         self.description = description
         self.location = location
         self.im = im
     }
-    
-    // Convert to Dictionary
+
     func toDictionary() -> [String: Any] {
         return [
             "name": name,
@@ -516,18 +503,16 @@ class PetLiveUpdate  {
             "im": im
         ]
     }
-    
-    // Initialize from Dictionary
+
     convenience init?(from dictionary: [String: Any]) {
         guard let name = dictionary["name"] as? String,
               let description = dictionary["description"] as? String,
               let latitude = dictionary["latitude"] as? Double,
               let longitude = dictionary["longitude"] as? Double,
               let im = dictionary["im"] as? [String] else {
-            print("Failed to decode PetLiveUpdate from dictionary: \(dictionary)")
             return nil
         }
-        
+
         let location = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.init(name: name, description: description, location: location, im: im)
     }

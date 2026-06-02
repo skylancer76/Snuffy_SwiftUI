@@ -1,8 +1,3 @@
-//
-//  PetBotView.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma
-
 import SwiftUI
 import Combine
 import PhotosUI

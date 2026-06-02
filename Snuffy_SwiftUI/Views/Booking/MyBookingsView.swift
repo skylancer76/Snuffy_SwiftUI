@@ -1,10 +1,3 @@
-//
-//  MyBookingsView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham on 19/01/26.
-//
-
 import SwiftUI
 import Kingfisher
 
@@ -190,7 +183,7 @@ struct BookingCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 16) {
                 
                 // MARK: - Pet Image
                 ZStack {
@@ -205,23 +198,37 @@ struct BookingCard: View {
                 }
                 
                 // MARK: - Pet Details
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(booking.petName)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.black)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .top) {
+                        Text(booking.petName)
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.black)
+                        
+                        Spacer()
+                        
+                        StatusBadge(status: booking.dynamicStatus)
+                    }
                     
                     if booking.type == .caretaker {
-                        labelRow(label: "Start:", value: formatDate(booking.startDate))
-                        labelRow(label: "End:",   value: formatDate(booking.endDate))
+                        Text("Pet Sitting • \(caretakerDuration(start: booking.startDate, end: booking.endDate))")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                        Text(caretakerDateLine(start: booking.startDate, end: booking.endDate))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
                     } else {
-                        labelRow(label: "Date:",     value: formatDate(booking.startDate))
-                        labelRow(label: "Duration:", value: formatTimeRange(start: booking.startDate, end: booking.endDate))
+                        Text("Dog Walking • \(booking.durationString)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                        Text(dogWalkerDateLine(start: booking.startDate, end: booking.endDate))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
                     }
                 }
-                
-                Spacer(minLength: 4)
-                
-                StatusBadge(status: booking.dynamicStatus)
             }
             
             // MARK: - Action Buttons
@@ -268,7 +275,6 @@ struct BookingCard: View {
                     }
                 }
                 .onFailure { err in
-                    print("❌ Image load failed [\(urlStr)]: \(err.localizedDescription)")
                 }
                 .resizable()
                 .scaledToFill()
@@ -281,23 +287,29 @@ struct BookingCard: View {
     }
     
     // MARK: - Helpers
-    private func labelRow(label: String, value: String) -> some View {
-        (Text(label).foregroundColor(.gray) + Text(" \(value)").foregroundColor(.black))
-            .font(.system(size: 12))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+    private func caretakerDuration(start: Date, end: Date) -> String {
+        let calendar = Calendar.current
+        let startOfDay1 = calendar.startOfDay(for: start)
+        let startOfDay2 = calendar.startOfDay(for: end)
+        let components = calendar.dateComponents([.day], from: startOfDay1, to: startOfDay2)
+        let days = max(1, abs(components.day ?? 0))
+        return "\(days) Day\(days == 1 ? "" : "s")"
     }
-    
-    private func formatDate(_ date: Date) -> String {
+
+    private func caretakerDateLine(start: Date, end: Date) -> String {
         let f = DateFormatter()
-        f.dateFormat = "dd MMM yyyy"
-        return f.string(from: date)
+        f.dateFormat = "d MMM yyyy"
+        return "\(f.string(from: start)) • \(f.string(from: end))"
     }
-    
-    private func formatTimeRange(start: Date, end: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "h a"
-        return "\(f.string(from: start)) to \(f.string(from: end))"
+
+    private func dogWalkerDateLine(start: Date, end: Date) -> String {
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "d MMM yyyy"
+        
+        let timeFmt = DateFormatter()
+        timeFmt.dateFormat = "h:mm a"
+        
+        return "\(dateFmt.string(from: start)) • \(timeFmt.string(from: start)) – \(timeFmt.string(from: end))"
     }
 }
 

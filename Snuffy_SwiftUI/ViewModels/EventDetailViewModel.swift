@@ -1,8 +1,3 @@
-//
-//  EventDetailViewModel.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma 
-
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore

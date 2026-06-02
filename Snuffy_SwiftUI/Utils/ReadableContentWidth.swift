@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Caps content width on iPad / large screens so forms and centered layouts don't
-/// stretch edge-to-edge. iPhone is unaffected.
 struct ReadableContentWidth: ViewModifier {
     var max: CGFloat = 560
 

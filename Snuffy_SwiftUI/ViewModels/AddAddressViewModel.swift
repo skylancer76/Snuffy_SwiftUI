@@ -1,10 +1,3 @@
-//
-//  AddAddressViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 18/01/26.
-//
-
 import SwiftUI
 import Combine
 import MapKit
@@ -108,7 +101,6 @@ class AddAddressViewModel: NSObject, ObservableObject {
             guard let self = self,
                   let coordinate = response?.mapItems.first?.placemark.coordinate,
                   error == nil else {
-                print("Error in local search: \(error?.localizedDescription ?? "Unknown")")
                 return
             }
             
@@ -136,7 +128,6 @@ class AddAddressViewModel: NSObject, ObservableObject {
             guard let self = self,
                   let placemark = placemarks?.first else {
                 if let error = error {
-                    print("Error retrieving address: \(error.localizedDescription)")
                 }
                 return
             }
@@ -204,7 +195,6 @@ class AddAddressViewModel: NSObject, ObservableObject {
         fetchUserName(userId: userId) { [weak self] userName in
             guard let self = self else { return }
             
-            print("User name returned from fetchUserName: \(userName)")
             
             let requestId = UUID().uuidString
             
@@ -231,14 +221,12 @@ class AddAddressViewModel: NSObject, ObservableObject {
             // Save to Firestore using FirebaseManager
             FirebaseManager.shared.saveScheduleRequestData(data: requestData) { error in
                 if let error = error {
-                    print("Failed to save schedule request: \(error.localizedDescription)")
                     DispatchQueue.main.async {
                         self.isLoading = false
                         self.alertMessage = "Failed to save the schedule request."
                         self.showAlert = true
                     }
                 } else {
-                    print("Schedule request saved successfully!")
                     
                     // Create CLLocation from selected coordinates
                     let userLocation = CLLocation(
@@ -256,9 +244,7 @@ class AddAddressViewModel: NSObject, ObservableObject {
                             self.isLoading = false
                             
                             if let assignError = assignError {
-                                print("Auto-assign caretaker error: \(assignError.localizedDescription)")
                             } else {
-                                print("Caretaker assigned for request: \(requestId)")
                             }
                             
                             // Navigate to success screen
@@ -274,7 +260,6 @@ class AddAddressViewModel: NSObject, ObservableObject {
     // Matches UIKit: Add_Address -> scheduleRequestTapped (for dogwalker)
     private func updateDogWalkerRequest(addressData: [String: Any]) {
         guard let requestId = currentRequestId else {
-            print("No current request ID found; cannot update address.")
             isLoading = false
             alertMessage = "No request ID found for updating the dogwalker request."
             showAlert = true
@@ -288,7 +273,6 @@ class AddAddressViewModel: NSObject, ObservableObject {
             guard let self = self else { return }
             
             if let error = error {
-                print("Error fetching dogwalker request: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.isLoading = false
                     self.alertMessage = "Could not retrieve the request."
@@ -304,14 +288,12 @@ class AddAddressViewModel: NSObject, ObservableObject {
                 // Document doesn't exist, create it with address data
                 requestRef.setData(addressData, merge: true) { error in
                     if let error = error {
-                        print("Error creating dogwalker request with address: \(error.localizedDescription)")
                         DispatchQueue.main.async {
                             self.isLoading = false
                             self.alertMessage = "Could not create the request with address."
                             self.showAlert = true
                         }
                     } else {
-                        print("Successfully created dogwalker request with address!")
                         self.afterDogwalkerUpdate(addressData: addressData, requestId: requestId)
                     }
                 }
@@ -325,14 +307,12 @@ class AddAddressViewModel: NSObject, ObservableObject {
             guard let self = self else { return }
             
             if let error = error {
-                print("Error updating dog walker request with address: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.isLoading = false
                     self.alertMessage = "Could not update the request with address."
                     self.showAlert = true
                 }
             } else {
-                print("Successfully updated dog walker request with address!")
                 self.afterDogwalkerUpdate(addressData: addressData, requestId: requestId)
             }
         }
@@ -359,9 +339,7 @@ class AddAddressViewModel: NSObject, ObservableObject {
                 self.isLoading = false
                 
                 if let assignError = assignError {
-                    print("Auto-assign dogwalker error: \(assignError.localizedDescription)")
                 } else {
-                    print("Dogwalker assigned for request: \(requestId)")
                 }
                 
                 // Navigate to success screen
@@ -376,22 +354,17 @@ class AddAddressViewModel: NSObject, ObservableObject {
         let db = Firestore.firestore()
         let usersCollection = db.collection("users")
         
-        print("Attempting to fetch user name for userId: \(userId)")
         
         usersCollection.document(userId).getDocument { document, error in
             if let error = error {
-                print("Failed to fetch user name: \(error.localizedDescription)")
                 completion("Anonymous User")
             } else if let document = document, document.exists {
                 if let data = document.data(), let name = data["name"] as? String, !name.isEmpty {
-                    print("Fetched user name: \(name)")
                     completion(name)
                 } else {
-                    print("Document exists but no valid 'name' field found")
                     completion("Anonymous User")
                 }
             } else {
-                print("Document does not exist for userId: \(userId)")
                 completion("Anonymous User")
             }
         }
@@ -405,6 +378,5 @@ extension AddAddressViewModel: MKLocalSearchCompleterDelegate {
     }
     
     func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
-        print("Search completer error: \(error.localizedDescription)")
     }
 }

@@ -1,11 +1,3 @@
-//
-//  AdminNotificationService.swift
-//  Snuffy_SwiftUI
-//
-//  Authored by bhumika sharam
-//
-
-
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
@@ -15,15 +7,14 @@ struct AdminNotificationService {
 
     static let shared = AdminNotificationService()
 
-    // Where caregiver-application emails are sent. Not a secret — fill in.
     private let adminEmail        = "sharmabhumika54@gmail.com"
-    // Used to build the Approve button URL in the email. Not a secret.
     private let firebaseProjectID = "pawpal-18920"
 
     private let db = Firestore.firestore()
     private let functions = Functions.functions()
 
-    // MARK: - Send Caretaker Approval Email
+    // MARK: - Caretaker Approval
+
     func sendCaretakerApprovalRequest(
         uid: String,
         name: String,
@@ -37,9 +28,6 @@ struct AdminNotificationService {
         lor: String,
         galleryImages: [String]
     ) {
-        print("[AdminNotificationService] 🚀 Starting caretaker approval request...")
-        print("[AdminNotificationService] UID: \(uid), Name: \(name), Email: \(email)")
-
         let token = "\(uid)_caretaker"
         let approvalURL = cloudFunctionURL(token: token)
 
@@ -56,16 +44,15 @@ struct AdminNotificationService {
         saveNotificationToFirestore(token: token, uid: uid, role: "caretaker",
                                     name: name, email: email)
 
-        print("[AdminNotificationService] 📨 About to call sendEmail for caretaker...")
         sendEmail(
             to: adminEmail,
             subject: "🐾 New Caretaker Application — \(name)",
             htmlBody: html
         )
-        print("[AdminNotificationService] 📨 sendEmail function called for caretaker")
     }
 
-    // MARK: - Send Dog Walker Approval Email
+    // MARK: - Dog Walker Approval
+
     func sendDogWalkerApprovalRequest(
         uid: String,
         name: String,
@@ -78,9 +65,6 @@ struct AdminNotificationService {
         lor: String,
         galleryImages: [String]
     ) {
-        print("[AdminNotificationService] 🚀 Starting dog walker approval request...")
-        print("[AdminNotificationService] UID: \(uid), Name: \(name), Email: \(email)")
-
         let token = "\(uid)_dogwalker"
         let approvalURL = cloudFunctionURL(token: token)
 
@@ -97,25 +81,16 @@ struct AdminNotificationService {
         saveNotificationToFirestore(token: token, uid: uid, role: "dogwalker",
                                     name: name, email: email)
 
-        print("[AdminNotificationService] 📨 About to call sendEmail for dogwalker...")
         sendEmail(
             to: adminEmail,
             subject: "🐾 New Dog Walker Application — \(name)",
             htmlBody: html
         )
-        print("[AdminNotificationService] 📨 sendEmail function called for dogwalker")
     }
 
-    // MARK: - Core Email Send (via Cloud Function)
-    //
-    // The SendGrid API key lives server-side as a Firebase Secret. This client
-    // forwards { to, subject, htmlBody } to the `sendCaregiverEmail` callable,
-    // which proxies the request to SendGrid.
-    private func sendEmail(to: String, subject: String, htmlBody: String) {
-        print("[AdminNotificationService] 📧 Preparing to send email...")
-        print("[AdminNotificationService] To: \(to)")
-        print("[AdminNotificationService] Subject: \(subject)")
+    // MARK: - Email Dispatch
 
+    private func sendEmail(to: String, subject: String, htmlBody: String) {
         let payload: [String: Any] = [
             "to": to,
             "subject": subject,
@@ -126,21 +101,16 @@ struct AdminNotificationService {
         Task {
             do {
                 _ = try await callable.call(payload)
-                print("[AdminNotificationService] ✅ Email sent successfully to \(to)")
             } catch {
-                print("[AdminNotificationService] ❌ Email send failed: \(error.localizedDescription)")
             }
         }
-        print("[AdminNotificationService] 📧 Email task started")
     }
 
     // MARK: - Firestore Audit Trail
+
     private func saveNotificationToFirestore(
         token: String, uid: String, role: String, name: String, email: String
     ) {
-        print("[AdminNotificationService] 📝 Saving notification to Firestore...")
-        print("[AdminNotificationService] Token: \(token), UID: \(uid), Role: \(role)")
-
         let doc: [String: Any] = [
             "uid": uid,
             "role": role,
@@ -153,19 +123,16 @@ struct AdminNotificationService {
 
         db.collection("admin_notifications").document(token).setData(doc) { error in
             if let error = error {
-                print("[AdminNotificationService] ✗ Firestore write FAILED: \(error.localizedDescription)")
-            } else {
-                print("[AdminNotificationService] ✓ Firestore write SUCCESS for token: \(token)")
             }
         }
     }
 
-    // MARK: - Approval Cloud Function URL
+    // MARK: - Helpers
+
     private func cloudFunctionURL(token: String) -> String {
         return "https://us-central1-\(firebaseProjectID).cloudfunctions.net/approveCaregiver?token=\(token)"
     }
 
-    // MARK: - HTML Email Builder
     private func buildEmailHTML(
         role: String, name: String, email: String, address: String,
         bio: String, experience: String, petsHandled: Int, phoneNumber: String,
@@ -192,7 +159,6 @@ struct AdminNotificationService {
           <div style="max-width:600px; margin:30px auto; background-color:#ffffff; border-radius:20px;
                       overflow:hidden; border:1px solid #e0e0e0;">
 
-            <!-- Header -->
             <div style="background-color:#FF6699; padding:32px; text-align:center;">
               <div style="font-size:40px;">🐾</div>
               <h1 style="color:#ffffff; margin:8px 0 4px; font-size:22px;">
@@ -203,7 +169,6 @@ struct AdminNotificationService {
               </p>
             </div>
 
-            <!-- Details table -->
             <div style="padding:28px 32px;">
               <table style="width:100%; border-collapse:collapse; font-size:14px;">
                 \(tableRow("👤 Name", name))
@@ -217,7 +182,6 @@ struct AdminNotificationService {
                 \(tableRow("📄 Letter of Recommendation", lor.isEmpty ? "Not provided" : lor))
               </table>
 
-              <!-- Gallery -->
               \(galleryImages.isEmpty ? "" : """
               <div style="margin-top:28px;">
                 <h3 style="color:#333333; font-size:16px; margin-bottom:16px; border-bottom:1px solid #eee; padding-bottom:8px;">📸 Photos</h3>
@@ -225,7 +189,6 @@ struct AdminNotificationService {
               </div>
               """)
 
-              <!-- Approve Button -->
               <div style="text-align:center; margin-top:40px; margin-bottom:20px;">
                 <a href="\(approvalURL)" target="_blank"
                    style="display:inline-block; padding:16px 48px; background-color:#FF3366;
@@ -239,7 +202,6 @@ struct AdminNotificationService {
               </div>
             </div>
 
-            <!-- Footer -->
             <div style="background:#f9f9f9; padding:16px 32px; text-align:center;
                         border-top:1px solid #f0f0f0;">
               <p style="color:#ccc; font-size:11px; margin:0;">

@@ -1,10 +1,3 @@
-//
-//  MainTabView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham on 19/01/26.
-//
-
 import SwiftUI
 
 struct MainTabView: View {

@@ -1,10 +1,3 @@
-//
-//  MyPetsViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham on 19/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseAuth
@@ -34,7 +27,6 @@ class MyPetsViewModel: ObservableObject {
         
         isLoading = true
         
-        // Remove existing listener if any
         petsListener?.remove()
         
         petsListener = db.collection("Pets")
@@ -68,7 +60,6 @@ class MyPetsViewModel: ObservableObject {
         for pet in petsToDelete {
             db.collection("Pets").document(pet.petId).delete { error in
                 if let error = error {
-                    print("Error deleting pet: \(error.localizedDescription)")
                 }
             }
         }

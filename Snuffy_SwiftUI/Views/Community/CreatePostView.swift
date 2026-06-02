@@ -1,8 +1,3 @@
-//
-//  CreatePostView.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma 
-
 import SwiftUI
 import PhotosUI
 import AVKit

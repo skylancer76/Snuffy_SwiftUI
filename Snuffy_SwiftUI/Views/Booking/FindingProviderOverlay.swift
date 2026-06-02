@@ -1,8 +1,3 @@
-//
-//  FindingProviderOverlay.swift
-//  Snuffy_SwiftUI
-//
-
 import SwiftUI
 
 /// Full-screen overlay shown over a booking-info screen while the request is

@@ -1,10 +1,3 @@
-//
-//  CaregiverOnboardingViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 30/03/26.
-//
-
 import SwiftUI
 import PhotosUI
 import FirebaseAuth
@@ -119,11 +112,8 @@ class CaregiverOnboardingViewModel: ObservableObject {
                 self.locationStatus = "Location obtained!"
             }
 
-            print("[CaregiverOnboarding] 📍 Got location: \(latitude), \(longitude)")
-
             self.uploadAllImages { [weak self] urls in
                 guard let self = self else {
-                    print("[CaregiverOnboarding] ❌ Self is nil after image upload")
                     return
                 }
 
@@ -134,8 +124,6 @@ class CaregiverOnboardingViewModel: ObservableObject {
                     self.finish(error: "Not authenticated.")
                     return
                 }
-
-                print("[CaregiverOnboarding] 📤 Starting profile update for uid=\(uid)")
 
                 let exp = Int(experienceValue) ?? 0
                 let pets = Int(petsHandledValue) ?? 0
@@ -179,12 +167,9 @@ class CaregiverOnboardingViewModel: ObservableObject {
                     : (Auth.auth().currentUser?.email?.components(separatedBy: "@").first ?? "New Applicant")
                 let notifEmail = Auth.auth().currentUser?.email ?? ""
 
-                print("[CaregiverOnboarding] 📝 Updating \(collection) document for uid=\(uid) with location [\(latitude), \(longitude)]")
-
                 // Use setData with merge instead of updateData for more reliability
                 self.db.collection(collection).document(uid).setData(update, merge: true) { error in
                     if let error = error {
-                        print("[CaregiverOnboarding] ❌ Firestore update FAILED: \(error.localizedDescription)")
                         DispatchQueue.main.async {
                             self.isLoading = false
                             self.alertMessage = error.localizedDescription
@@ -192,9 +177,6 @@ class CaregiverOnboardingViewModel: ObservableObject {
                         }
                         return
                     }
-
-                    print("[CaregiverOnboarding] ✅ Firestore update SUCCESS with location data")
-                    print("[CaregiverOnboarding] 🔔 Sending admin notification for uid=\(uid) role=\(notifRole)")
 
                     // Send admin notification
                     if role == .caretaker {
@@ -335,7 +317,6 @@ class CaregiverOnboardingViewModel: ObservableObject {
         do {
             try Auth.auth().signOut()
         } catch {
-            print("[CaregiverOnboarding] ❌ Logout failed: \(error.localizedDescription)")
         }
     }
 }

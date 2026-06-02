@@ -1,8 +1,3 @@
-//
-//  ServiceFlowViewModel.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma
-
 import Foundation
 import FirebaseFirestore
 import Combine

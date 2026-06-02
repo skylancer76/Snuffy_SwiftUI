@@ -1,10 +1,3 @@
-//
-//  PetMedicationViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 19/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseFirestore

@@ -1,10 +1,3 @@
-//
-//  CaregiverPetProfileView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 19/01/26.
-//
-
 import SwiftUI
 
 // MARK: - Caregiver Pet Profile (mirrors PetProfileView, read-only — no delete menu)

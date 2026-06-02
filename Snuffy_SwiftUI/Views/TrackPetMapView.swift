@@ -1,8 +1,3 @@
-//
-//  TrackPetMapView.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma 
-
 import SwiftUI
 import MapKit
 import CoreLocation
@@ -124,7 +119,6 @@ struct TrackMapRepresentable: UIViewRepresentable {
         }
 
         func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-            print("TrackPetMap location error: \(error.localizedDescription)")
         }
 
         private func drawRoute(from source: CLLocationCoordinate2D, to dest: CLLocationCoordinate2D) {

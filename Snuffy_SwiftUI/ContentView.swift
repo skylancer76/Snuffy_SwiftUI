@@ -1,18 +1,16 @@
-//
-//  ContentView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 30/12/25.
-//
-
 import SwiftUI
 import FirebaseAuth
 
 struct ContentView: View {
+
+    // MARK: - Properties
+
     @State private var isLoggedIn = false
     @State private var showSplash = true
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+
+    // MARK: - Body
 
     var body: some View {
         ZStack {
@@ -43,6 +41,8 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Subviews
+
     private var splashView: some View {
         ZStack {
             LinearGradient(
@@ -61,8 +61,3 @@ struct ContentView: View {
         }
     }
 }
-
-#Preview {
-    ContentView()
-}
-

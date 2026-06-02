@@ -1,10 +1,3 @@
-//
-//  UserRoleViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 19/01/26.
-//
-
 import Foundation
 import Combine
 import FirebaseAuth

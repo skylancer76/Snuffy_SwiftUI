@@ -1,10 +1,3 @@
-//
-//  MyBookingsViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham on 19/01/26.
-//
-
 import Foundation
 import Combine
 import FirebaseFirestore
@@ -95,7 +88,6 @@ class MyBookingsViewModel: ObservableObject {
     
     func setupListeners() {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
-            print("No user logged in to fetch bookings")
             return
         }
         
@@ -105,7 +97,6 @@ class MyBookingsViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
                 if let error = error {
-                    print("Error fetching caretaker bookings: \(error.localizedDescription)")
                     return
                 }
                 
@@ -158,7 +149,6 @@ class MyBookingsViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self = self else { return }
                 if let error = error {
-                    print("Error fetching dog walker bookings: \(error.localizedDescription)")
                     return
                 }
                 
@@ -214,7 +204,6 @@ class MyBookingsViewModel: ObservableObject {
             .limit(to: 1)
             .getDocuments { snapshot, error in
                 if let error = error {
-                    print("Error fetching pet image for \(petName): \(error.localizedDescription)")
                     completion(nil)
                     return
                 }
@@ -232,9 +221,7 @@ class MyBookingsViewModel: ObservableObject {
                 "status": "Rejected"
             ]) { error in
                 if let error = error {
-                    print("Error auto-rejecting \(requestId): \(error.localizedDescription)")
                 } else {
-                    print("Auto-rejected request \(requestId) because start date passed")
                 }
             }
         }

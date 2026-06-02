@@ -1,8 +1,3 @@
-//
-//  CaretakerProfileViewModel.swift
-//  Snuffy_SwiftUI
-//
-
 import SwiftUI
 import Combine
 import CoreLocation

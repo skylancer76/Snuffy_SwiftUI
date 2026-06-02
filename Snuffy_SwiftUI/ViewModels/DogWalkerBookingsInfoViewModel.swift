@@ -1,10 +1,3 @@
-//
-//  DogWalkerBookingsInfoViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 19/01/26.
-//
-
 import Foundation
 import FirebaseFirestore
 import Combine
@@ -17,7 +10,6 @@ class DogWalkerBookingsInfoViewModel: ObservableObject {
     
     func fetchDogWalkerDetails(dogWalkerId: String) {
         guard !dogWalkerId.isEmpty else {
-            print("Dog walker ID is empty. Skipping fetch.")
             isLoading = false
             return
         }
@@ -28,7 +20,6 @@ class DogWalkerBookingsInfoViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self?.isLoading = false
                     if let error = error {
-                        print("Error fetching dogwalker details: \(error.localizedDescription)")
                         return
                     }
                     if let data = document?.data() {
@@ -37,10 +28,8 @@ class DogWalkerBookingsInfoViewModel: ObservableObject {
                             let decoded = try JSONDecoder().decode(DogWalker.self, from: jsonData)
                             self?.dogWalker = decoded
                         } catch {
-                            print("Error decoding dogwalker: \(error.localizedDescription)")
                         }
                     } else {
-                        print("No dogwalker found for ID: \(dogWalkerId)")
                     }
                 }
             }

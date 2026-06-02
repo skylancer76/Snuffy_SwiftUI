@@ -1,8 +1,3 @@
-//
-//  OTPEntrySheet.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma
-
 import SwiftUI
 
 struct OTPEntrySheet: View {

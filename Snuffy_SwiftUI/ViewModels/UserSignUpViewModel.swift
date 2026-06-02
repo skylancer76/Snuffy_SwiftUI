@@ -1,10 +1,3 @@
-//
-//  UserSignUpViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 13/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseAuth
@@ -78,7 +71,6 @@ class UserSignUpViewModel: ObservableObject {
         
         isLoading = true
         
-        // TODO: Connect to Firebase Manager
         Auth.auth().createUser(withEmail: email, password: password) { [weak self] authResult, error in
             guard let self = self else { return }
             
@@ -98,11 +90,9 @@ class UserSignUpViewModel: ObservableObject {
                 return
             }
 
-            // Set Firebase Auth displayName so notifications can read real name
             let changeRequest = user.createProfileChangeRequest()
             changeRequest.displayName = self.name
             changeRequest.commitChanges { _ in
-                // Save user data based on role (proceed regardless of profile update error)
                 switch self.selectedRole {
                 case .petOwner:
                     self.saveUserDataToFirestore(uid: user.uid)
@@ -115,7 +105,7 @@ class UserSignUpViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Firebase Save Methods (to be connected to Firebase Manager later)
+    // MARK: - Firestore Save
     private func saveUserDataToFirestore(uid: String) {
         let userData: [String: Any] = [
             "uid": uid,

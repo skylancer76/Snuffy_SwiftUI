@@ -1,11 +1,3 @@
-//
-//  UserProfileView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 13/01/26.
-//
-
-
 import SwiftUI
 import PhotosUI
 

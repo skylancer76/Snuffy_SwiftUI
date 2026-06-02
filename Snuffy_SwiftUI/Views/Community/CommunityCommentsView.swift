@@ -1,10 +1,3 @@
-//
-//  CommunityCommentsView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 30/03/26.
-//
-
 import SwiftUI
 
 struct CommunityCommentsView: View {

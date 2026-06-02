@@ -1,10 +1,3 @@
-//
-//  MyPetsView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Antigravity on 19/01/26.
-//
-
 import SwiftUI
 
 struct MyPetsView: View {

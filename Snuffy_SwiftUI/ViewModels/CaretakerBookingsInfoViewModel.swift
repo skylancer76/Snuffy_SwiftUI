@@ -1,10 +1,3 @@
-//
-//  CaretakerBookingsInfoViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 30/03/26.
-//
-
 import Foundation
 import FirebaseFirestore
 import Combine
@@ -28,11 +21,9 @@ class CaretakerBookingsInfoViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self?.isLoading = false
                     if let error = error {
-                        print("Error fetching caretaker details: \(error.localizedDescription)")
                         return
                     }
                     guard let doc = snapshot?.documents.first else {
-                        print("No caretaker found for ID: \(caretakerId)")
                         return
                     }
                     // Store the real document ID so ratings land on the correct document
@@ -43,7 +34,6 @@ class CaretakerBookingsInfoViewModel: ObservableObject {
                         let decoded = try JSONDecoder().decode(Caretakers.self, from: jsonData)
                         self?.caretaker = decoded
                     } catch {
-                        print("Error decoding caretaker: \(error.localizedDescription)")
                     }
                 }
             }

@@ -1,10 +1,3 @@
-//
-//  DietDetailView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 21/01/26.
-//
-
 import SwiftUI
 
 struct DietDetailView: View {
@@ -84,4 +77,3 @@ struct DietDetailView: View {
         ))
     }
 }
-

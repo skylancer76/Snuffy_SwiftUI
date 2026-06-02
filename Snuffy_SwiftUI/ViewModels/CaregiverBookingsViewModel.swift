@@ -1,10 +1,3 @@
-//
-//  CaregiverBookingsViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 30/03/26.
-//
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -79,7 +72,6 @@ class CaregiverBookingsViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snap, error in
                 guard let self = self else { return }
                 if let error = error {
-                    print("Error: \(error.localizedDescription)")
                     DispatchQueue.main.async { self.isLoading = false }
                     return
                 }
@@ -138,7 +130,6 @@ class CaregiverBookingsViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snap, error in
                 guard let self = self else { return }
                 if let error = error {
-                    print("Error: \(error.localizedDescription)")
                     DispatchQueue.main.async { self.isLoading = false }
                     return
                 }
@@ -194,7 +185,7 @@ class CaregiverBookingsViewModel: ObservableObject {
     func markAsCompleted(booking: CaregiverBookingItem) {
         let collection = booking.type == .caretaker ? "scheduleRequests" : "dogWalkerRequests"
         db.collection(collection).document(booking.id).updateData(["status": "completed"]) { error in
-            if let error = error { print("Error marking complete: \(error)") }
+            if let error = error { _ = error }
         }
     }
 }

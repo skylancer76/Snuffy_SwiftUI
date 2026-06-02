@@ -1,10 +1,3 @@
-//
-//  AddPetView.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 19/01/26.
-//
-
 import SwiftUI
 
 struct AddPetView: View {

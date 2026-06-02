@@ -1,10 +1,3 @@
-//
-//  HomeViewModel.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 18/01/26.
-//
-
 import SwiftUI
 import Combine
 import FirebaseAuth
@@ -41,9 +34,7 @@ class HomeViewModel: ObservableObject {
 
     // MARK: - Search Logic
 
-    /// Called from HomeView's `handleSearch` for Firestore pet-name lookup
     func searchPetByName(_ name: String) {
-        // 1. Quick local check first
         let lower = name.lowercased()
         if let foundPet = homePets.first(where: { ($0.petName ?? "").lowercased() == lower }) {
             selectedPet = foundPet
@@ -51,7 +42,6 @@ class HomeViewModel: ObservableObject {
             return
         }
 
-        // 2. Fallback to Firestore
         isSearchingPet = true
         petSearchError = nil
         searchPetInDB(name: name)
@@ -59,7 +49,6 @@ class HomeViewModel: ObservableObject {
 
     private func searchPetInDB(name: String) {
         let db = Firestore.firestore()
-        // Try exact capitalised form; also try trimmed lowercased
         db.collection("Pets")
             .whereField("petName", isEqualTo: name.capitalized)
             .getDocuments { [weak self] snapshot, error in
@@ -117,8 +106,7 @@ class HomeViewModel: ObservableObject {
                     self.userEmail = email
                     self.userInitials = self.getInitials(from: name)
                     self.profilePicURL = data["profilePicURL"] as? String
-                    
-                    // Parse createdAt for "Member since"
+                    // Parse createdAt
                     if let timestamp = data["createdAt"] as? Timestamp {
                         let date = timestamp.dateValue()
                         let formatter = DateFormatter()
@@ -127,8 +115,6 @@ class HomeViewModel: ObservableObject {
                     }
                 }
             } else {
-                let errorDesc = error?.localizedDescription ?? "Unknown error"
-                print("User document not found or missing fields: \(errorDesc)")
                 DispatchQueue.main.async {
                     self.userInitials = "U"
                     self.userName = "Unknown User"
@@ -155,7 +141,6 @@ class HomeViewModel: ObservableObject {
                 guard let self = self else { return }
 
                 if let error = error {
-                    print("Error fetching pet data for Home: \(error.localizedDescription)")
                     return
                 }
 
@@ -194,7 +179,6 @@ class HomeViewModel: ObservableObject {
             try Auth.auth().signOut()
             shouldNavigateToLogin = true
         } catch {
-            print("Error signing out: \(error.localizedDescription)")
         }
     }
 
@@ -224,7 +208,6 @@ class HomeViewModel: ObservableObject {
 
         storageRef.putData(imageData, metadata: nil) { [weak self] _, error in
             if let error = error {
-                print("Error uploading profile picture: \(error.localizedDescription)")
                 DispatchQueue.main.async { self?.isUploadingProfilePic = false }
                 return
             }
@@ -232,7 +215,6 @@ class HomeViewModel: ObservableObject {
             storageRef.downloadURL { [weak self] url, error in
                 guard let self = self else { return }
                 if let error = error {
-                    print("Error getting download URL: \(error.localizedDescription)")
                     DispatchQueue.main.async { self.isUploadingProfilePic = false }
                     return
                 }
@@ -246,7 +228,6 @@ class HomeViewModel: ObservableObject {
                             if error == nil {
                                 self.profilePicURL = urlString
                             } else {
-                                print("Error saving profile pic URL: \(error!.localizedDescription)")
                             }
                         }
                     }

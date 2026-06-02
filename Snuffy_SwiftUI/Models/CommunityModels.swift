@@ -1,14 +1,8 @@
-//
-//  CommunityModels.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Bhumika Sharma on 30/03/26.
-//
-
 import Foundation
 import FirebaseFirestore
 
 // MARK: - Media Type
+
 enum CommunityMediaType: String, Codable {
     case text   = "text"
     case image  = "image"
@@ -16,6 +10,7 @@ enum CommunityMediaType: String, Codable {
 }
 
 // MARK: - Community Post
+
 struct CommunityPost: Identifiable, Codable {
     var id: String
     var userId: String
@@ -27,7 +22,6 @@ struct CommunityPost: Identifiable, Codable {
     var timestamp: Date
     var likesCount: Int
     var commentsCount: Int
-    /// Populated client-side after checking the likes sub-collection
     var isLikedByCurrentUser: Bool = false
 
     init(
@@ -56,7 +50,6 @@ struct CommunityPost: Identifiable, Codable {
         self.isLikedByCurrentUser = isLikedByCurrentUser
     }
 
-    /// Initialize from a Firestore document dictionary
     init?(from data: [String: Any], id: String) {
         guard
             let userId       = data["userId"]    as? String,
@@ -98,6 +91,7 @@ struct CommunityPost: Identifiable, Codable {
 }
 
 // MARK: - Community Comment
+
 struct CommunityComment: Identifiable, Codable {
     var id: String
     var postId: String
@@ -152,6 +146,7 @@ struct CommunityComment: Identifiable, Codable {
 }
 
 // MARK: - Community Event
+
 struct CommunityEvent: Identifiable, Codable {
     var id: String
     var title: String
@@ -226,4 +221,3 @@ struct CommunityEvent: Identifiable, Codable {
         return dict
     }
 }
-

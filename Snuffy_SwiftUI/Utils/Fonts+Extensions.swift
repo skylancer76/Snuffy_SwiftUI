@@ -1,10 +1,3 @@
-//
-//  Fonts+Extensions.swift
-//  Snuffy_SwiftUI
-//
-//  Created by Pawan Priyatham  on 14/01/26.
-//
-
 import SwiftUI
 
 extension Font {
@@ -12,4 +5,3 @@ extension Font {
         .custom("Chalkboard SE", size: size)
     }
 }
- 

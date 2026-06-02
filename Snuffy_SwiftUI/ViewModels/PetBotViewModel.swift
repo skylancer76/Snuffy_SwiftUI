@@ -1,8 +1,3 @@
-//
-//  PetBotViewModel.swift
-//  Snuffy_SwiftUI
-//  Created by Bhumika Sharma
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -174,7 +169,6 @@ class PetBotViewModel: ObservableObject {
             geminiHistory.append(GeminiContent(role: "model", parts: [GeminiPart(text: reply)]))
             if geminiHistory.count > 40 { geminiHistory.removeFirst(2) }
         } catch {
-            print("[PetBot] Gemini error: \(error)")
             let userMessage = userFacingMessage(for: error)
             let errMsg = PetBotMessage(text: userMessage, isUser: false)
             messages.append(errMsg)
