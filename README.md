@@ -28,7 +28,7 @@ Snuffy is a modern, premium iOS application built with SwiftUI that connects pet
 - **Package Management**: Swift Package Manager (SPM)
 - **Image Loading**: Kingfisher
 
-## 📱 App Structure
+## App Structure
 
 The app is cleanly separated into feature domains:
 - `Views/Home`: Core navigation, custom tab bars, and user/caregiver home screens.
