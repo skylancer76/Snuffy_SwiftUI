@@ -1,7 +1,7 @@
 # Snuffy
 
 > [!NOTE]
-> This project was developed as part of the End Semester Major Project (21CSP402L) during my final year of undergraduate study at SRM Institute of Science and Technology.
+> This project was developed as part of the End Semester **Major Project (21CSP402L)** during my final year of undergraduate study at SRM Institute of Science and Technology.
 
 ## Problem Statement
 
@@ -63,5 +63,5 @@ Ensure that your `GoogleService-Info.plist` is properly added to the root of the
 Snuffy prioritizes a rich, vibrant aesthetic utilizing curated color palettes (like `snuffyPink`), smooth micro-animations, glassmorphism (`.ultraThinMaterial`), and a dynamic, responsive UI.
 
 > [!IMPORTANT]
-> ## Copyright & License
+> ### Copyright & License
 > Copyright for this project is registered under IDF reference number CR_202608. All rights reserved.
