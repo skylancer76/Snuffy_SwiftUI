@@ -1,10 +1,14 @@
 import SwiftUI
 
 struct RequestScheduledView: View {
+    // MARK: - Properties
+    
     @Environment(\.dismiss) var dismiss
     @State private var rotationAngle: Double = 0
     
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
+    
+    // MARK: - Body
     
     var body: some View {
         ZStack {
@@ -14,7 +18,6 @@ struct RequestScheduledView: View {
             VStack(spacing: 32) {
                 Spacer()
                 
-                // Rotating Seal Icon
                 ZStack {
                     Image(systemName: "seal")
                         .resizable()
@@ -54,7 +57,6 @@ struct RequestScheduledView: View {
                 
                 Spacer()
                 
-                // Okay Button
                 Button(action: {
                     navigateToHome()
                 }) {
@@ -72,6 +74,8 @@ struct RequestScheduledView: View {
         }
         .navigationBarBackButtonHidden(true)
     }
+    
+    // MARK: - Methods
     
     private func navigateToHome() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

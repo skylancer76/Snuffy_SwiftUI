@@ -17,7 +17,6 @@ struct UserProfileView: View {
     
     var body: some View {
         ZStack {
-            // Background gradient matching HomeView
             LinearGradient(
                 colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
                 startPoint: .top,
@@ -26,7 +25,6 @@ struct UserProfileView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header (Back button)
                 HStack {
                     Button(action: {
                         dismiss()
@@ -51,7 +49,6 @@ struct UserProfileView: View {
                         
                         // MARK: - Profile Picture + Name
                         VStack(spacing: 14) {
-                            // Profile picture with upload
                             ZStack(alignment: .bottomTrailing) {
                                 if viewModel.isUploadingProfilePic {
                                     Circle()
@@ -87,7 +84,6 @@ struct UserProfileView: View {
                                     initialsAvatar
                                 }
                                 
-                                // Camera overlay button
                                 Button(action: {
                                     showImagePicker = true
                                 }) {
@@ -104,7 +100,6 @@ struct UserProfileView: View {
                                 .offset(x: 2, y: 2)
                             }
                             
-                            // User name
                             Text(viewModel.userName)
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.primary)
@@ -114,7 +109,6 @@ struct UserProfileView: View {
                         
                         // MARK: - Info Card (Email + Member Since)
                         VStack(spacing: 0) {
-                            // Email Row
                             HStack(spacing: 16) {
                                 Image(systemName: "envelope.fill")
                                     .font(.system(size: 18))
@@ -134,7 +128,6 @@ struct UserProfileView: View {
                             Divider()
                                 .padding(.leading, 56)
                             
-                            // Member Since Row
                             HStack(spacing: 16) {
                                 Image(systemName: "calendar")
                                     .font(.system(size: 18))
@@ -161,7 +154,6 @@ struct UserProfileView: View {
                         
                         // MARK: - Settings Card (Push Notifications, Help, Data)
                         VStack(spacing: 0) {
-                            // Push Notifications
                             HStack(spacing: 16) {
                                 Image(systemName: "bell.fill")
                                     .font(.system(size: 18))
@@ -184,7 +176,6 @@ struct UserProfileView: View {
                             Divider()
                                 .padding(.leading, 56)
                             
-                            // Help
                             Button(action: { openURL(helpURL) }) {
                                 HStack(spacing: 16) {
                                     Image(systemName: "questionmark.circle.fill")
@@ -209,7 +200,6 @@ struct UserProfileView: View {
                             Divider()
                                 .padding(.leading, 56)
 
-                            // See how your data is managed
                             Button(action: { openURL(dataPolicyURL) }) {
                                 HStack(spacing: 16) {
                                     Image(systemName: "shield.checkered")

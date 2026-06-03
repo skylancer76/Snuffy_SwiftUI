@@ -2,19 +2,23 @@ import SwiftUI
 import Kingfisher
 
 struct CaretakerHomeView: View {
+    // MARK: - Properties
+    
     @StateObject private var viewModel = CaretakerHomeViewModel()
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
-    // Reject confirmation alert state
+    // MARK: - State: Alerts
     @State private var pendingRejectCaretakerId: String? = nil
     @State private var pendingRejectDogWalkerId: String? = nil
 
-    // State for popup
+    // MARK: - State: Navigation & Popups
     @State private var showNewRequestPopup = false
     @State private var selectedBookingId: String? = nil
     @State private var shouldNavigateToDetails = false
 
+    // MARK: - Computed Properties
+    
     private var pendingRejectCaretaker: ScheduleCaretakerRequest? {
         guard let id = pendingRejectCaretakerId else { return nil }
         return viewModel.scheduleRequests.first { $0.requestId == id }
@@ -71,6 +75,8 @@ struct CaretakerHomeView: View {
     private var sectionTitleForRole: String {
         isDogWalker ? "For Dog Walkers" : "For Caretakers"
     }
+    
+    // MARK: - Body
     
     var body: some View {
         styledContent
@@ -137,6 +143,8 @@ struct CaretakerHomeView: View {
             }
     }
     
+    // MARK: - View Components
+    
     private var coreContent: some View {
         VStack(spacing: 0) {
             headerSection
@@ -175,7 +183,7 @@ struct CaretakerHomeView: View {
         )
     }
     
-    // MARK: - Extracted Sub-Views
+    // MARK: - Subviews
     
     private var headerSection: some View {
         HStack {

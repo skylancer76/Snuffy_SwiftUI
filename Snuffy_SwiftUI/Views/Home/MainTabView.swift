@@ -1,14 +1,45 @@
 import SwiftUI
 
 struct MainTabView: View {
+    // MARK: - Properties
+    
     @State private var selectedTab = 0
     @StateObject private var roleVM = UserRoleViewModel()
     @Namespace private var tabAnimation
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
+    // MARK: - Computed Properties
+    
     var isCaregiver: Bool {
         roleVM.role == .caretaker || roleVM.role == .dogWalker
     }
+
+    /// The floating tab bar is hidden while a caregiver is still
+    /// in the onboarding or waiting-for-approval flow.
+    private var showTabBar: Bool {
+        if isCaregiver {
+            return roleVM.isProfileComplete && roleVM.isVerified
+        }
+        return true
+    }
+
+    private var currentTabItems: [(icon: String, label: String)] {
+        if isCaregiver {
+            return [
+                ("house.fill",          "Home"),
+                ("list.clipboard.fill", "Bookings")
+            ]
+        } else {
+            return [
+                ("heart.fill",          "Home"),
+                ("list.clipboard.fill", "My Bookings"),
+                ("pawprint.fill",       "My Pets"),
+                ("person.3.fill",       "Community")
+            ]
+        }
+    }
+
+    // MARK: - Body
 
     var body: some View {
         if roleVM.isLoading {
@@ -19,19 +50,16 @@ struct MainTabView: View {
                 // Main Content
                 Group {
                     if isCaregiver {
-                        // MARK: Caregiver Entry Blocker
+                        // MARK: - Caregiver Routing
                         if !roleVM.isProfileComplete {
-                            // Step 1 — New caregiver: collect profile details
                             NavigationStack {
                                 CaretakerOnboardingView(role: roleVM.role, roleVM: roleVM)
                             }
                         } else if !roleVM.isVerified {
-                            // Step 2 — Profile submitted: wait for admin approval
                             NavigationStack {
                                 WaitingListView(roleVM: roleVM)
                             }
                         } else {
-                            // Step 3 — Approved: show normal caregiver home
                             switch selectedTab {
                             case 0:
                                 NavigationStack { CaretakerHomeView() }
@@ -63,7 +91,8 @@ struct MainTabView: View {
                     selectedTab = 2
                 }
 
-                // Floating Tab Bar — hidden during onboarding / waitlist
+                // MARK: - Floating Tab Bar
+
                 if showTabBar {
                     HStack(spacing: 0) {
                         ForEach(currentTabItems.indices, id: \.self) { i in
@@ -94,90 +123,9 @@ struct MainTabView: View {
             .animation(.spring(response: 0.35), value: showTabBar)
         }
     }
-
-    private var currentTabItems: [(icon: String, label: String)] {
-        if isCaregiver {
-            return [
-                ("house.fill",          "Home"),
-                ("list.clipboard.fill", "Bookings")
-            ]
-        } else {
-            return [
-                ("heart.fill",          "Home"),
-                ("list.clipboard.fill", "My Bookings"),
-                ("pawprint.fill",       "My Pets"),
-                ("person.3.fill",       "Community")
-            ]
-        }
-    }
-
-    /// The floating tab bar is hidden while a caregiver is still
-    /// in the onboarding or waiting-for-approval flow.
-    private var showTabBar: Bool {
-        if isCaregiver {
-            return roleVM.isProfileComplete && roleVM.isVerified
-        }
-        return true
-    }
 }
 
-// MARK: - Role-Aware Tab View (for Caretakers & DogWalkers)
-struct CaregiverMainTabView: View {
-    @State private var selectedTab = 0
-    @Namespace private var tabAnimation
-    private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            Group {
-                switch selectedTab {
-                case 0:
-                    NavigationStack {
-                        CaretakerHomeView()
-                    }
-                case 1:
-                    NavigationStack {
-                        CaregiverBookingsView()
-                    }
-                default:
-                    NavigationStack {
-                        CaretakerHomeView()
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            HStack(spacing: 0) {
-                ForEach(caregiverTabItems.indices, id: \.self) { i in
-                    let item = caregiverTabItems[i]
-                    TabButton(
-                        index: i,
-                        icon: item.icon,
-                        label: item.label,
-                        selectedTab: $selectedTab,
-                        color: snuffyPink,
-                        namespace: tabAnimation
-                    )
-                }
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 4)
-            )
-            .padding(.horizontal, 14)
-            .padding(.bottom, 12)
-        }
-        .ignoresSafeArea(.keyboard, edges: .bottom)
-    }
-
-    private var caregiverTabItems: [(icon: String, label: String)] = [
-        ("house.fill",          "Home"),
-        ("list.clipboard.fill", "Bookings")
-    ]
-}
+// MARK: - Helper Views
 
 struct TabButton: View {
     let index: Int

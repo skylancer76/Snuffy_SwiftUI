@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RatingSheetView: View {
+    // MARK: - Properties
+    
     let targetName: String
     @ObservedObject var vm: RatingViewModel
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +13,8 @@ struct RatingSheetView: View {
 
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
+    // MARK: - Body
+    
     var body: some View {
         VStack(spacing: 0) {
 
@@ -148,6 +152,8 @@ struct RatingSheetView: View {
         }
     }
 
+    // MARK: - Helpers
+    
     private var ratingLabel: String {
         switch selectedStars {
         case 1: return "Poor"
