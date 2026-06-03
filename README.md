@@ -1,8 +1,8 @@
-# Snuffy 🐾
+# Snuffy
 
 Snuffy is a modern, premium iOS application built with SwiftUI that connects pet owners with trusted, verified pet caregivers. Whether you need a daily dog walker or a weekend pet sitter, Snuffy provides a seamless platform for scheduling, managing, and reviewing pet care services.
 
-## ✨ Features
+## Features
 
 ### For Pet Owners
 - **Find Caregivers**: Browse profiles for verified Caretakers and Dog Walkers in your area.
@@ -18,7 +18,7 @@ Snuffy is a modern, premium iOS application built with SwiftUI that connects pet
 - **Schedule Management**: Accept or reject requests with a single tap.
 - **Resource Library**: Access helpful articles and resources tailored to your role.
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Framework**: SwiftUI (iOS 16.0+)
 - **Architecture**: MVVM (Model-View-ViewModel)
@@ -37,7 +37,7 @@ The app is cleanly separated into feature domains:
 - `Models`: Data models bridging Firestore documents and Swift structs.
 - `Services`: Singleton managers (e.g., `FirebaseManager`) handling API/Network layers.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - macOS 13.0 or later
@@ -54,11 +54,8 @@ The app is cleanly separated into feature domains:
 ### Firebase Configuration
 Ensure that your `GoogleService-Info.plist` is properly added to the root of the Xcode project to enable backend functionality.
 
-## 🎨 Design Philosophy
+## Design Philosophy
 Snuffy prioritizes a rich, vibrant aesthetic utilizing curated color palettes (like `snuffyPink`), smooth micro-animations, glassmorphism (`.ultraThinMaterial`), and a dynamic, responsive UI.
 
-## 📄 License
-This project is proprietary and confidential. 
-
----
-*Built with ❤️ for pets and the people who love them.*
+## Copyright & License
+Copyright for this project is registered under IDF reference number CR_202608. All rights reserved.
