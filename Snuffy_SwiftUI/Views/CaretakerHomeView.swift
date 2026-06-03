@@ -10,6 +10,12 @@ struct CaretakerHomeView: View {
     @State private var pendingRejectCaretaker: ScheduleCaretakerRequest? = nil
     @State private var pendingRejectDogWalker: ScheduleDogWalkerRequest? = nil
 
+    // State for popup
+    @State private var showNewRequestPopup = false
+    @State private var shownRequestIds = Set<String>()
+    @State private var selectedBookingForDetails: BookingItem? = nil
+    @State private var shouldNavigateToDetails = false
+
     private var isDogWalker: Bool { viewModel.dogWalkerId != nil }
 
     private var articlesForRole: [CaregiverArticle] {
@@ -23,145 +29,219 @@ struct CaretakerHomeView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Home")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.black)
+        ZStack {
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Home")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        viewModel.shouldNavigateToProfile = true
+                    }) {
+                        Circle()
+                            .fill(snuffyPink)
+                            .frame(width: 40, height: 40)
+                            .shadow(color: snuffyPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                            .overlay(
+                                Text(viewModel.userInitials)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                            )
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 12)
                 
-                Spacer()
-                
-                Button(action: {
-                    viewModel.shouldNavigateToProfile = true
-                }) {
-                    Circle()
-                        .fill(snuffyPink)
-                        .frame(width: 40, height: 40)
-                        .shadow(color: snuffyPink.opacity(0.3), radius: 5, x: 0, y: 3)
-                        .overlay(
-                            Text(viewModel.userInitials)
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                        )
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        
+                        // 1. Banner Section
+                        Image("Caretaker Home Screen Banner")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 25)
+                        
+                        // 2. Upcoming Bookings Section
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Upcoming Bookings")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
+                            
+                            if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
+                                ProgressView()
+                                    .padding(.vertical, 30)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.bottom, 25)
+                            } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "calendar.badge.exclamationmark")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(.gray.opacity(0.6))
+                                    Text("No Upcoming Bookings")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 30)
+                                .background(Color.white)
+                                .cornerRadius(16)
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 25)
+                            } else {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
+                                            RequestCard(
+                                                petName: request.petName,
+                                                serviceType: "Pet Sitting",
+                                                duration: caretakerDuration(for: request),
+                                                dateLine: caretakerDateLine(for: request),
+                                                imageUrl: request.petImageUrl,
+                                                onAccept: { viewModel.acceptCaretakerRequest(request: request) },
+                                                onReject: { pendingRejectCaretaker = request }
+                                            )
+                                            .frame(width: UIScreen.main.bounds.width - 40)
+                                        }
+
+                                        ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
+                                            RequestCard(
+                                                petName: request.petName,
+                                                serviceType: "Dog Walking",
+                                                duration: request.duration,
+                                                dateLine: dogWalkerDateLine(for: request),
+                                                imageUrl: request.petImageUrl,
+                                                onAccept: { viewModel.acceptDogWalkerRequest(request: request) },
+                                                onReject: { pendingRejectDogWalker = request }
+                                            )
+                                            .frame(width: UIScreen.main.bounds.width - 40)
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 12) // padded to prevent shadow clipping
+                                }
+                                .padding(.bottom, 25)
+                            }
+                        }
+
+                        // 3. Calendar Section
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Booking Calendar")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
+
+                            MonthCalendarView(bookingsByDate: viewModel.bookingsByDate)
+                                .padding(.bottom, 25)
+                        }
+
+                        // 4. Articles Section
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(sectionTitleForRole)
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
+
+                            VStack(spacing: 16) {
+                                ForEach(articlesForRole) { article in
+                                    NavigationLink(destination: ArticleReaderView(article: article)) {
+                                        ArticleCard(
+                                            category: article.category,
+                                            title: article.title,
+                                            readTime: article.readTime,
+                                            iconName: article.iconName,
+                                            iconColor: article.iconColor
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 40)
+                        }
+                    }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 12)
             
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
+            // Pop-up Notification
+            if showNewRequestPopup, let requestItem = pendingRequest {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                
+                VStack {
+                    Spacer()
                     
-                    // 1. Banner Section
-                    Image("Caretaker Home Screen Banner")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 25)
-                    
-                    // 2. Upcoming Bookings Section
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Upcoming Bookings")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 20)
+                    VStack(spacing: 24) {
+                        Image(systemName: "bell.and.waves.left.and.right.fill")
+                            .font(.system(size: 56))
+                            .foregroundColor(snuffyPink)
+                            .padding(.top, 16)
                         
-                        if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
-                            ProgressView()
-                                .padding(.vertical, 30)
-                                .frame(maxWidth: .infinity)
-                                .padding(.bottom, 25)
-                        } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
-                            VStack(spacing: 12) {
-                                Image(systemName: "calendar.badge.exclamationmark")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.gray.opacity(0.6))
-                                Text("No Upcoming Bookings")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.gray)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 30)
-                            .background(Color.white)
-                            .cornerRadius(16)
+                        Text("You've received a new booking request!")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.black)
+                            .multilineTextAlignment(.center)
                             .padding(.horizontal, 20)
-                            .padding(.bottom, 25)
-                        } else {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
-                                        RequestCard(
-                                            petName: request.petName,
-                                            serviceType: "Pet Sitting",
-                                            duration: caretakerDuration(for: request),
-                                            dateLine: caretakerDateLine(for: request),
-                                            imageUrl: request.petImageUrl,
-                                            onAccept: { viewModel.acceptCaretakerRequest(request: request) },
-                                            onReject: { pendingRejectCaretaker = request }
-                                        )
-                                        .frame(width: UIScreen.main.bounds.width - 40)
-                                    }
-
-                                    ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
-                                        RequestCard(
-                                            petName: request.petName,
-                                            serviceType: "Dog Walking",
-                                            duration: request.duration,
-                                            dateLine: dogWalkerDateLine(for: request),
-                                            imageUrl: request.petImageUrl,
-                                            onAccept: { viewModel.acceptDogWalkerRequest(request: request) },
-                                            onReject: { pendingRejectDogWalker = request }
-                                        )
-                                        .frame(width: UIScreen.main.bounds.width - 40)
-                                    }
+                        
+                        HStack(spacing: 16) {
+                            Button(action: {
+                                shownRequestIds.insert(requestItem.id)
+                                withAnimation {
+                                    showNewRequestPopup = false
                                 }
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 12) // padded to prevent shadow clipping
-                            }
-                            .padding(.bottom, 25)
-                        }
-                    }
-
-                    // 3. Calendar Section
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Booking Calendar")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 20)
-
-                        MonthCalendarView(bookingsByDate: viewModel.bookingsByDate)
-                            .padding(.bottom, 25)
-                    }
-
-                    // 4. Articles Section
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(sectionTitleForRole)
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 20)
-
-                        VStack(spacing: 16) {
-                            ForEach(articlesForRole) { article in
-                                NavigationLink(destination: ArticleReaderView(article: article)) {
-                                    ArticleCard(
-                                        category: article.category,
-                                        title: article.title,
-                                        readTime: article.readTime,
-                                        iconName: article.iconName,
-                                        iconColor: article.iconColor
+                            }) {
+                                Text("Okay")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(snuffyPink)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 52)
+                                    .background(Color.white)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 26)
+                                            .stroke(snuffyPink, lineWidth: 2)
                                     )
-                                }
-                                .buttonStyle(.plain)
+                                    .cornerRadius(26)
                             }
+                            .buttonStyle(.plain)
+                            
+                            Button(action: {
+                                shownRequestIds.insert(requestItem.id)
+                                withAnimation {
+                                    showNewRequestPopup = false
+                                }
+                                selectedBookingForDetails = requestItem
+                                shouldNavigateToDetails = true
+                            }) {
+                                Text("View")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 52)
+                                    .background(snuffyPink)
+                                    .cornerRadius(26)
+                            }
+                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
+                        .padding(.bottom, 24)
                     }
+                    .padding(24)
+                    .background(Color.white)
+                    .clipShape(RoundedCorner(radius: 30, corners: [.topLeft, .topRight]))
+                    .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: -5)
+                    .transition(.move(edge: .bottom))
                 }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
         .alert("Reject this booking?",
@@ -202,6 +282,18 @@ struct CaretakerHomeView: View {
         .onAppear {
             viewModel.checkUserRoleAndFetchRequests()
             viewModel.fetchUserProfile()
+            checkForNewRequests()
+        }
+        .onChange(of: viewModel.scheduleRequests) { _, _ in
+            checkForNewRequests()
+        }
+        .onChange(of: viewModel.dogWalkerRequests) { _, _ in
+            checkForNewRequests()
+        }
+        .navigationDestination(isPresented: $shouldNavigateToDetails) {
+            if let booking = selectedBookingForDetails {
+                CaregiverBookingDetailsView(booking: booking)
+            }
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarTitle("", displayMode: .inline)
@@ -246,6 +338,51 @@ extension CaretakerHomeView {
         let dateFmt = DateFormatter(); dateFmt.dateFormat = "d MMM yyyy"
         let timeFmt = DateFormatter(); timeFmt.dateFormat = "h:mm a"
         return "\(dateFmt.string(from: request.date)) • \(timeFmt.string(from: request.startTime)) – \(timeFmt.string(from: request.endTime))"
+    }
+}
+
+// MARK: - New Request Notification Helper
+extension CaretakerHomeView {
+    private var pendingRequest: BookingItem? {
+        if let request = viewModel.scheduleRequests.first(where: { !shownRequestIds.contains($0.requestId) }) {
+            return BookingItem(
+                id: request.requestId,
+                petId: request.petId,
+                petName: request.petName,
+                petImageUrl: request.petImageUrl,
+                startDate: request.startDate ?? Date(),
+                endDate: request.endDate ?? Date(),
+                status: request.status,
+                type: .caretaker,
+                durationString: request.duration,
+                caretakerRequest: request,
+                dogWalkerRequest: nil
+            )
+        }
+        if let request = viewModel.dogWalkerRequests.first(where: { !shownRequestIds.contains($0.requestId) }) {
+            return BookingItem(
+                id: request.requestId,
+                petId: request.petId,
+                petName: request.petName,
+                petImageUrl: request.petImageUrl,
+                startDate: request.startTime,
+                endDate: request.endTime,
+                status: request.status,
+                type: .dogWalker,
+                durationString: request.duration,
+                caretakerRequest: nil,
+                dogWalkerRequest: request
+            )
+        }
+        return nil
+    }
+
+    private func checkForNewRequests() {
+        if pendingRequest != nil {
+            withAnimation {
+                showNewRequestPopup = true
+            }
+        }
     }
 }
 

@@ -15,20 +15,30 @@ struct RequestScheduledView: View {
                 Spacer()
                 
                 // Rotating Seal Icon
-                Image(systemName: "pawprint.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 120, height: 120)
-                    .foregroundColor(snuffyPink)
-                    .rotationEffect(.degrees(rotationAngle))
-                    .onAppear {
+                ZStack {
+                    Image(systemName: "seal")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 140, height: 140)
+                        .foregroundColor(snuffyPink)
+                        .rotationEffect(.degrees(rotationAngle))
+                    
+                    Image(systemName: "pawprint.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 48, height: 48)
+                        .foregroundColor(snuffyPink)
+                }
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(
-                            Animation.linear(duration: 3)
+                            Animation.linear(duration: 12)
                                 .repeatForever(autoreverses: false)
                         ) {
                             rotationAngle = 360
                         }
                     }
+                }
                 
                 VStack(spacing: 16) {
                     Text("Booking Request Sent")
@@ -37,7 +47,7 @@ struct RequestScheduledView: View {
                     
                     Text("Your request has been sent! ❤️ Sit tight while we review and accept your booking.")
                         .font(.system(size: 16))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.black)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
@@ -52,11 +62,11 @@ struct RequestScheduledView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
+                        .frame(height: 52)
                         .background(snuffyPink)
-                        .cornerRadius(12)
+                        .cornerRadius(30)
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 16)
                 .padding(.bottom, 40)
             }
         }
@@ -64,13 +74,9 @@ struct RequestScheduledView: View {
     }
     
     private func navigateToHome() {
-        // Navigate back to home tab
-        // This will need to be handled by the parent TabView
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first {
-            // Reset to tab bar and select home tab
-            // You'll need to handle this based on your app structure
-            dismiss()
+            window.rootViewController?.dismiss(animated: true, completion: nil)
         }
     }
 }
