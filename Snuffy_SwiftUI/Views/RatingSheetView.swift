@@ -18,7 +18,7 @@ struct RatingSheetView: View {
             Capsule()
                 .fill(Color(uiColor: .tertiaryLabel))
                 .frame(width: 36, height: 5)
-                .padding(.top, 10)
+                .padding(.top, 25)
                 .padding(.bottom, 18)
 
             HStack {
@@ -137,6 +137,7 @@ struct RatingSheetView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .padding(.horizontal, 20)
+            .padding(.top, 20)
             .padding(.bottom, 32)
             .disabled(vm.isSubmitting || selectedStars == 0)
             .animation(.easeInOut(duration: 0.2), value: selectedStars)

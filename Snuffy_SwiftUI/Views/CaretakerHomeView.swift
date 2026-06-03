@@ -7,14 +7,58 @@ struct CaretakerHomeView: View {
     private let snuffyPink = Color(red: 1.0, green: 0.4, blue: 0.6)
 
     // Reject confirmation alert state
-    @State private var pendingRejectCaretaker: ScheduleCaretakerRequest? = nil
-    @State private var pendingRejectDogWalker: ScheduleDogWalkerRequest? = nil
+    @State private var pendingRejectCaretakerId: String? = nil
+    @State private var pendingRejectDogWalkerId: String? = nil
 
     // State for popup
     @State private var showNewRequestPopup = false
-    @State private var shownRequestIds = Set<String>()
-    @State private var selectedBookingForDetails: BookingItem? = nil
+    @State private var selectedBookingId: String? = nil
     @State private var shouldNavigateToDetails = false
+
+    private var pendingRejectCaretaker: ScheduleCaretakerRequest? {
+        guard let id = pendingRejectCaretakerId else { return nil }
+        return viewModel.scheduleRequests.first { $0.requestId == id }
+    }
+    
+    private var pendingRejectDogWalker: ScheduleDogWalkerRequest? {
+        guard let id = pendingRejectDogWalkerId else { return nil }
+        return viewModel.dogWalkerRequests.first { $0.requestId == id }
+    }
+    
+    private var selectedBookingForDetails: BookingItem? {
+        guard let id = selectedBookingId else { return nil }
+        if let request = viewModel.scheduleRequests.first(where: { $0.requestId == id }) {
+            return BookingItem(
+                id: request.requestId,
+                petId: request.petId,
+                petName: request.petName,
+                petImageUrl: request.petImageUrl,
+                startDate: request.startDate ?? Date(),
+                endDate: request.endDate ?? Date(),
+                status: request.status,
+                type: .caretaker,
+                durationString: request.duration,
+                caretakerRequest: request,
+                dogWalkerRequest: nil
+            )
+        }
+        if let request = viewModel.dogWalkerRequests.first(where: { $0.requestId == id }) {
+            return BookingItem(
+                id: request.requestId,
+                petId: request.petId,
+                petName: request.petName,
+                petImageUrl: request.petImageUrl,
+                startDate: request.startTime,
+                endDate: request.endTime,
+                status: request.status,
+                type: .dogWalker,
+                durationString: request.duration,
+                caretakerRequest: nil,
+                dogWalkerRequest: request
+            )
+        }
+        return nil
+    }
 
     private var isDogWalker: Bool { viewModel.dogWalkerId != nil }
 
@@ -29,154 +73,266 @@ struct CaretakerHomeView: View {
     }
     
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Home")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.black)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        viewModel.shouldNavigateToProfile = true
-                    }) {
-                        Circle()
-                            .fill(snuffyPink)
-                            .frame(width: 40, height: 40)
-                            .shadow(color: snuffyPink.opacity(0.3), radius: 5, x: 0, y: 3)
-                            .overlay(
-                                Text(viewModel.userInitials)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                            )
-                    }
+        styledContent
+            .alert("Reject this booking?",
+                   isPresented: caretakerRejectBinding) {
+                Button("Reject", role: .destructive) {
+                    if let r = pendingRejectCaretaker { viewModel.rejectCaretakerRequest(request: r) }
+                    pendingRejectCaretakerId = nil
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 12)
-                
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        
-                        // 1. Banner Section
-                        Image("Caretaker Home Screen Banner")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 25)
-                        
-                        // 2. Upcoming Bookings Section
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("Upcoming Bookings")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
-                            
-                            if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
-                                ProgressView()
-                                    .padding(.vertical, 30)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.bottom, 25)
-                            } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
-                                VStack(spacing: 12) {
-                                    Image(systemName: "calendar.badge.exclamationmark")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.gray.opacity(0.6))
-                                    Text("No Upcoming Bookings")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.gray)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 30)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 25)
-                            } else {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
-                                            RequestCard(
-                                                petName: request.petName,
-                                                serviceType: "Pet Sitting",
-                                                duration: caretakerDuration(for: request),
-                                                dateLine: caretakerDateLine(for: request),
-                                                imageUrl: request.petImageUrl,
-                                                onAccept: { viewModel.acceptCaretakerRequest(request: request) },
-                                                onReject: { pendingRejectCaretaker = request }
-                                            )
-                                            .frame(width: UIScreen.main.bounds.width - 40)
-                                        }
-
-                                        ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
-                                            RequestCard(
-                                                petName: request.petName,
-                                                serviceType: "Dog Walking",
-                                                duration: request.duration,
-                                                dateLine: dogWalkerDateLine(for: request),
-                                                imageUrl: request.petImageUrl,
-                                                onAccept: { viewModel.acceptDogWalkerRequest(request: request) },
-                                                onReject: { pendingRejectDogWalker = request }
-                                            )
-                                            .frame(width: UIScreen.main.bounds.width - 40)
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                    .padding(.bottom, 12) // padded to prevent shadow clipping
-                                }
-                                .padding(.bottom, 25)
-                            }
-                        }
-
-                        // 3. Calendar Section
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("Booking Calendar")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
-
-                            MonthCalendarView(bookingsByDate: viewModel.bookingsByDate)
-                                .padding(.bottom, 25)
-                        }
-
-                        // 4. Articles Section
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(sectionTitleForRole)
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
-
-                            VStack(spacing: 16) {
-                                ForEach(articlesForRole) { article in
-                                    NavigationLink(destination: ArticleReaderView(article: article)) {
-                                        ArticleCard(
-                                            category: article.category,
-                                            title: article.title,
-                                            readTime: article.readTime,
-                                            iconName: article.iconName,
-                                            iconColor: article.iconColor
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 40)
-                        }
-                    }
+                Button("Cancel", role: .cancel) { pendingRejectCaretakerId = nil }
+            } message: {
+                Text("This booking will be reassigned to the next available caretaker.")
+            }
+            .alert("Reject this booking?",
+                   isPresented: dogWalkerRejectBinding) {
+                Button("Reject", role: .destructive) {
+                    if let r = pendingRejectDogWalker { viewModel.rejectDogWalkerRequest(request: r) }
+                    pendingRejectDogWalkerId = nil
+                }
+                Button("Cancel", role: .cancel) { pendingRejectDogWalkerId = nil }
+            } message: {
+                Text("This booking will be reassigned to the next available dog walker.")
+            }
+            .alert(item: errorBinding) { error in
+                Alert(title: Text("Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
+            }
+    }
+    
+    private var styledContent: some View {
+        coreContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(
+                LinearGradient(
+                    colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+                .ignoresSafeArea()
+            )
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationBarTitle("", displayMode: .inline)
+            .onAppear {
+                viewModel.checkUserRoleAndFetchRequests()
+                viewModel.fetchUserProfile()
+                checkForNewRequests()
+            }
+            .onChange(of: viewModel.scheduleRequests.count) { _, _ in
+                checkForNewRequests()
+            }
+            .onChange(of: viewModel.dogWalkerRequests.count) { _, _ in
+                checkForNewRequests()
+            }
+            .navigationDestination(isPresented: $shouldNavigateToDetails) {
+                if let booking = selectedBookingForDetails {
+                    CaregiverBookingDetailsView(booking: booking)
                 }
             }
+            .fullScreenCover(isPresented: $viewModel.shouldNavigateToProfile) {
+                ProfileCompatibilityView(caretakerVM: viewModel)
+            }
+            .fullScreenCover(isPresented: $showNewRequestPopup) {
+                newRequestPopupOverlay
+                    .presentationBackground(.clear)
+            }
+    }
+    
+    private var coreContent: some View {
+        VStack(spacing: 0) {
+            headerSection
             
-            // Pop-up Notification
-            if showNewRequestPopup, let requestItem = pendingRequest {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    bannerSection
+                    upcomingBookingsSection
+                    calendarSection
+                    articlesSection
+                }
+            }
+        }
+    }
+    
+    // MARK: - Bindings (extracted to reduce body complexity)
+    
+    private var caretakerRejectBinding: Binding<Bool> {
+        Binding(
+            get: { pendingRejectCaretakerId != nil },
+            set: { if !$0 { pendingRejectCaretakerId = nil } }
+        )
+    }
+    
+    private var dogWalkerRejectBinding: Binding<Bool> {
+        Binding(
+            get: { pendingRejectDogWalkerId != nil },
+            set: { if !$0 { pendingRejectDogWalkerId = nil } }
+        )
+    }
+    
+    private var errorBinding: Binding<AlertError?> {
+        Binding(
+            get: { viewModel.errorMessage.map { AlertError(message: $0) } },
+            set: { _ in viewModel.errorMessage = nil }
+        )
+    }
+    
+    // MARK: - Extracted Sub-Views
+    
+    private var headerSection: some View {
+        HStack {
+            Text("Home")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            Button(action: {
+                viewModel.shouldNavigateToProfile = true
+            }) {
+                Circle()
+                    .fill(snuffyPink)
+                    .frame(width: 40, height: 40)
+                    .shadow(color: snuffyPink.opacity(0.3), radius: 5, x: 0, y: 3)
+                    .overlay(
+                        Text(viewModel.userInitials)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    )
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 12)
+    }
+    
+    private var bannerSection: some View {
+        Image("Caretaker Home Screen Banner")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 25)
+    }
+    
+    private var upcomingBookingsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Upcoming Bookings")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(.black)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            
+            if viewModel.isLoading && viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
+                ProgressView()
+                    .padding(.vertical, 30)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 25)
+            } else if viewModel.scheduleRequests.isEmpty && viewModel.dogWalkerRequests.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray.opacity(0.6))
+                    Text("No Upcoming Bookings")
+                        .font(.system(size: 16))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
+                .background(Color.white)
+                .cornerRadius(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 25)
+            } else {
+                bookingCardsScrollView
+            }
+        }
+    }
+    
+    private var bookingCardsScrollView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 16) {
+                ForEach(viewModel.scheduleRequests, id: \.requestId) { request in
+                    RequestCard(
+                        petName: request.petName,
+                        serviceType: "Pet Sitting",
+                        duration: caretakerDuration(for: request),
+                        dateLine: caretakerDateLine(for: request),
+                        imageUrl: request.petImageUrl,
+                        onAccept: { viewModel.acceptCaretakerRequest(request: request) },
+                        onReject: { pendingRejectCaretakerId = request.requestId }
+                    )
+                    .frame(width: UIScreen.main.bounds.width - 40)
+                }
+
+                ForEach(viewModel.dogWalkerRequests, id: \.requestId) { request in
+                    RequestCard(
+                        petName: request.petName,
+                        serviceType: "Dog Walking",
+                        duration: request.duration,
+                        dateLine: dogWalkerDateLine(for: request),
+                        imageUrl: request.petImageUrl,
+                        onAccept: { viewModel.acceptDogWalkerRequest(request: request) },
+                        onReject: { pendingRejectDogWalkerId = request.requestId }
+                    )
+                    .frame(width: UIScreen.main.bounds.width - 40)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
+        }
+        .padding(.bottom, 25)
+    }
+    
+    private var calendarSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Booking Calendar")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(.black)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+
+            MonthCalendarView(bookingsByDate: viewModel.bookingsByDate)
+                .padding(.bottom, 25)
+        }
+    }
+    
+    private var articlesSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(sectionTitleForRole)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(.black)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+
+            VStack(spacing: 16) {
+                ForEach(articlesForRole) { article in
+                    NavigationLink(destination: ArticleReaderView(article: article)) {
+                        ArticleCard(
+                            category: article.category,
+                            title: article.title,
+                            readTime: article.readTime,
+                            iconName: article.iconName,
+                            iconColor: article.iconColor
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 40)
+        }
+    }
+    
+    @ViewBuilder
+    private var newRequestPopupOverlay: some View {
+        if let requestItem = pendingRequest {
+            ZStack {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
-                    .transition(.opacity)
+                    .onTapGesture {
+                        markAsShown(requestItem.id)
+                        withAnimation {
+                            showNewRequestPopup = false
+                        }
+                    }
                 
                 VStack {
                     Spacer()
@@ -193,119 +349,60 @@ struct CaretakerHomeView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 20)
                         
-                        HStack(spacing: 16) {
-                            Button(action: {
-                                shownRequestIds.insert(requestItem.id)
-                                withAnimation {
-                                    showNewRequestPopup = false
-                                }
-                            }) {
-                                Text("Okay")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(snuffyPink)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 52)
-                                    .background(Color.white)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 26)
-                                            .stroke(snuffyPink, lineWidth: 2)
-                                    )
-                                    .cornerRadius(26)
-                            }
-                            .buttonStyle(.plain)
-                            
-                            Button(action: {
-                                shownRequestIds.insert(requestItem.id)
-                                withAnimation {
-                                    showNewRequestPopup = false
-                                }
-                                selectedBookingForDetails = requestItem
-                                shouldNavigateToDetails = true
-                            }) {
-                                Text("View")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 52)
-                                    .background(snuffyPink)
-                                    .cornerRadius(26)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 24)
+                        popupButtons(for: requestItem)
                     }
                     .padding(24)
                     .background(Color.white)
                     .clipShape(RoundedCorner(radius: 30, corners: [.topLeft, .topRight]))
                     .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: -5)
-                    .transition(.move(edge: .bottom))
                 }
                 .ignoresSafeArea(edges: .bottom)
             }
         }
-        .alert("Reject this booking?",
-               isPresented: Binding(
-                get: { pendingRejectCaretaker != nil },
-                set: { if !$0 { pendingRejectCaretaker = nil } }
-               )) {
-            Button("Reject", role: .destructive) {
-                if let r = pendingRejectCaretaker { viewModel.rejectCaretakerRequest(request: r) }
-                pendingRejectCaretaker = nil
+    }
+    
+    private func popupButtons(for requestItem: BookingItem) -> some View {
+        HStack(spacing: 16) {
+            Button(action: {
+                markAsShown(requestItem.id)
+                withAnimation {
+                    showNewRequestPopup = false
+                }
+            }) {
+                Text("Okay")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(snuffyPink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 26)
+                            .stroke(snuffyPink, lineWidth: 2)
+                    )
+                    .cornerRadius(26)
             }
-            Button("Cancel", role: .cancel) { pendingRejectCaretaker = nil }
-        } message: {
-            Text("This booking will be reassigned to the next available caretaker.")
-        }
-        .alert("Reject this booking?",
-               isPresented: Binding(
-                get: { pendingRejectDogWalker != nil },
-                set: { if !$0 { pendingRejectDogWalker = nil } }
-               )) {
-            Button("Reject", role: .destructive) {
-                if let r = pendingRejectDogWalker { viewModel.rejectDogWalkerRequest(request: r) }
-                pendingRejectDogWalker = nil
+            .buttonStyle(.plain)
+            
+            Button(action: {
+                markAsShown(requestItem.id)
+                withAnimation {
+                    showNewRequestPopup = false
+                }
+                selectedBookingId = requestItem.id
+                shouldNavigateToDetails = true
+            }) {
+                Text("View")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(snuffyPink)
+                    .cornerRadius(26)
             }
-            Button("Cancel", role: .cancel) { pendingRejectDogWalker = nil }
-        } message: {
-            Text("This booking will be reassigned to the next available dog walker.")
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(
-            LinearGradient(
-                colors: [snuffyPink.opacity(0.4), Color(UIColor.systemGray6)],
-                startPoint: .top,
-                endPoint: .center
-            )
-            .ignoresSafeArea()
-        )
-        .onAppear {
-            viewModel.checkUserRoleAndFetchRequests()
-            viewModel.fetchUserProfile()
-            checkForNewRequests()
-        }
-        .onChange(of: viewModel.scheduleRequests) { _, _ in
-            checkForNewRequests()
-        }
-        .onChange(of: viewModel.dogWalkerRequests) { _, _ in
-            checkForNewRequests()
-        }
-        .navigationDestination(isPresented: $shouldNavigateToDetails) {
-            if let booking = selectedBookingForDetails {
-                CaregiverBookingDetailsView(booking: booking)
-            }
-        }
-        .toolbar(.hidden, for: .navigationBar)
-        .navigationBarTitle("", displayMode: .inline)
-        .fullScreenCover(isPresented: $viewModel.shouldNavigateToProfile) {
-            ProfileCompatibilityView(caretakerVM: viewModel)
-        }
-        .alert(item: Binding<AlertError?>(
-            get: { viewModel.errorMessage.map { AlertError(message: $0) } },
-            set: { _ in viewModel.errorMessage = nil }
-        )) { error in
-            Alert(title: Text("Error"), message: Text(error.message), dismissButton: .default(Text("OK")))
-        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 24)
     }
 }
 
@@ -343,8 +440,18 @@ extension CaretakerHomeView {
 
 // MARK: - New Request Notification Helper
 extension CaretakerHomeView {
+    private func markAsShown(_ id: String) {
+        let shownIdsStr = UserDefaults.standard.string(forKey: "shownRequestIds") ?? ""
+        var shownIds = Set(shownIdsStr.components(separatedBy: ",").filter { !$0.isEmpty })
+        shownIds.insert(id)
+        UserDefaults.standard.set(shownIds.joined(separator: ","), forKey: "shownRequestIds")
+    }
+
     private var pendingRequest: BookingItem? {
-        if let request = viewModel.scheduleRequests.first(where: { !shownRequestIds.contains($0.requestId) }) {
+        let shownIdsStr = UserDefaults.standard.string(forKey: "shownRequestIds") ?? ""
+        let shownIds = Set(shownIdsStr.components(separatedBy: ",").filter { !$0.isEmpty })
+        
+        if let request = viewModel.scheduleRequests.first(where: { !shownIds.contains($0.requestId) }) {
             return BookingItem(
                 id: request.requestId,
                 petId: request.petId,
@@ -359,7 +466,7 @@ extension CaretakerHomeView {
                 dogWalkerRequest: nil
             )
         }
-        if let request = viewModel.dogWalkerRequests.first(where: { !shownRequestIds.contains($0.requestId) }) {
+        if let request = viewModel.dogWalkerRequests.first(where: { !shownIds.contains($0.requestId) }) {
             return BookingItem(
                 id: request.requestId,
                 petId: request.petId,

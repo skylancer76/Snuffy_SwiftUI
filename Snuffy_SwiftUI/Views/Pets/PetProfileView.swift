@@ -49,8 +49,12 @@ struct PetProfileView: View {
                             }
                         } label: {
                             Image(systemName: "ellipsis")
-                                .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.black)
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 44, height: 44)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
                         }
                     }
                     .padding(.horizontal, 24)
