@@ -35,12 +35,20 @@ Snuffy is a modern, premium iOS application built with SwiftUI that connects pet
 
 ## App Structure
 
-The app is cleanly separated into feature domains:
-- `Views/Home`: Core navigation, custom tab bars, and user/caregiver home screens.
-- `Views/Booking`: Everything related to scheduling, viewing, and managing booking requests.
-- `ViewModels`: Business logic and Firebase integration, keeping views lightweight.
-- `Models`: Data models bridging Firestore documents and Swift structs.
-- `Services`: Singleton managers (e.g., `FirebaseManager`) handling API/Network layers.
+```text
+Snuffy_SwiftUI/
+├── Models/                 # Data models bridging Firestore documents and Swift structs
+├── ViewModels/             # Business logic and Firebase integration, keeping views lightweight
+├── Views/                  # UI layer built entirely with SwiftUI
+│   ├── Authentication/     # Login, Signup, and Firebase Auth flows
+│   ├── Home/               # Core navigation, custom tab bars, and main dashboard
+│   ├── Booking/            # Scheduling, viewing, and managing booking requests
+│   ├── Community/          # Social features, user interaction, and posts
+│   ├── Pets/               # Pet profiles, medical history, and management
+│   └── ServiceProvider/    # Caregiver application, onboarding, and waitlist logic
+├── Services/               # Singleton managers (e.g., FirebaseManager) handling APIs
+└── Utils/                  # Reusable components, formatters, and helper extensions
+```
 
 ## Getting Started
 
