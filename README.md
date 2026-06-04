@@ -1,4 +1,5 @@
 # Snuffy
+### for the tails that wag
 
 > [!NOTE]
 > This project was developed as part of the End Semester **Major Project (21CSP402L)** during my final year of undergraduate study at SRM Institute of Science and Technology.
