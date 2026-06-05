@@ -18,6 +18,7 @@ Pet owners often struggle to find **reliable and trustworthy caretakers** when t
   - Vaccination records
   - Diet plans
   - Medication schedules
+-  Connect with other pet owners in the Snuffy community.
 
 Snuffy ensures secure, seamless connections between pet owners and caretakers, complete with **in-app messaging**, **voice calls**, and **booking confirmations**.
 
