@@ -6,7 +6,20 @@
 
 ## Problem Statement
 
-Snuffy is a modern, premium iOS application built with SwiftUI that connects pet owners with trusted, verified pet caregivers. Whether you need a daily dog walker or a weekend pet sitter, Snuffy provides a seamless platform for scheduling, managing, and reviewing pet care services.
+Pet owners often struggle to find **reliable and trustworthy caretakers** when they are unavailable. Whether it's for a short walk or an extended stay, they are always in a constant state of dilemma.
+
+## Our Solution
+
+**Snuffy** is a modern, premium iOS application built with SwiftUI that connects pet owners with trusted, verified pet caregivers. Whether you need a daily dog walker or a weekend pet sitter, Snuffy provides a seamless platform for scheduling, managing, and reviewing pet care services. It allows pet owners to:
+
+-  Book **pet caretaking** and **dog walking** services.
+-  Track their pet in **real-time** using **live updates using mapkit**.
+-  Store and manage all pet-related information in one place:
+  - Vaccination records
+  - Diet plans
+  - Medication schedules
+
+Snuffy ensures secure, seamless connections between pet owners and caretakers, complete with **in-app messaging**, **voice calls**, and **booking confirmations**.
 
 ## Features
 
