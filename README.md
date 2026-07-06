@@ -3,11 +3,12 @@
 > [!NOTE]
 > This project was developed as part of the End Semester **Major Project (21CSP402L)** during my final year of undergraduate study at SRM Institute of Science and Technology.
 > #### Project Report: [Final Major Project Report.pdf](https://github.com/user-attachments/files/28592781/Final.Major.Project.Report.pdf)
-> #### Website Link: https://snuffy-website.vercel.app/
 
 ## Problem Statement
 
 Pet owners often struggle to find **reliable and trustworthy caretakers** when they are unavailable. Whether it's for a short walk or an extended stay, they are always in a constant state of dilemma.
+
+Website Link: https://snuffy-website.vercel.app/
 
 ## Our Solution
 
